@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📐 중학교 1학년 수학 도입 자료실</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- 좌측 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-emoji">📐</span>
+      <div>
+        <h1 class="logo-title">수학 자료실</h1>
+        <p class="logo-subtitle">중학교 1학년 과정</p>
+      </div>
+    </div>
+
+    <!-- 단원 목록이 렌더링될 영역 -->
+    <nav class="unit-menu" id="unit-menu">
+      <!-- JS로 생성됨 -->
+    </nav>
+    
+    <div class="sidebar-footer">
+      <p>💡 <code>data.js</code> 파일에서 단원별<br>자료를 관리할 수 있습니다.</p>
+    </div>
+  </aside>
+
+  <!-- 우측 메인 뷰어 -->
+  <main class="main-content">
+    
+    <!-- 초기 환영 메시지 (자료를 선택하기 전에 보임) -->
+    <div class="welcome-screen" id="welcome-screen">
+      <div class="welcome-box">
+        <span class="welcome-emoji">👋</span>
+        <h2>수학 수업 도입 자료실에 오신 것을 환영합니다!</h2>
+        <p>왼쪽 메뉴에서 단원을 클릭하고, 보고 싶은 수업 자료를 선택해 주세요.</p>
+      </div>
+    </div>
+
+    <!-- 선택한 HTML 자료가 렌더링될 Iframe -->
+    <iframe id="viewer" src="" frameborder="0" style="display: none;"></iframe>
+
+  </main>
+
+  <!-- 데이터 및 제어 스크립트 로드 -->
+  <script src="data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const menuContainer = document.getElementById('unit-menu');
+      const viewer = document.getElementById('viewer');
+      const welcomeScreen = document.getElementById('welcome-screen');
+
+      // data.js에서 정의한 mathData 객체 불러오기
+      const data = window.mathData || {};
+
+      // 단원별 아코디언 메뉴 생성
+      for (const [unitName, materials] of Object.entries(data)) {
+        
+        // 1. 단원 헤더 생성 (클릭 시 아코디언 열림/닫힘)
+        const unitSection = document.createElement('div');
+        unitSection.className = 'unit-section';
+
+        const unitHeader = document.createElement('div');
+        unitHeader.className = 'unit-header';
+        
+        // 화살표 아이콘과 단원명
+        unitHeader.innerHTML = `
+          <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <span class="unit-title">${unitName}</span>
+          <span class="item-count">${materials.length}</span>
+        `;
+
+        // 2. 단원 내 자료 목록 리스트 생성
+        const materialList = document.createElement('ul');
+        materialList.className = 'material-list';
+        
+        // 자료가 없을 경우 빈 안내 문구 추가
+        if (materials.length === 0) {
+          materialList.innerHTML = `<li class="empty-item">추가된 자료가 없습니다.</li>`;
+        } else {
+          // 자료가 있을 경우 리스트 생성
+          materials.forEach(item => {
+            const listItem = document.createElement('li');
+            listItem.className = 'material-item';
+            listItem.innerHTML = `
+              <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+              <span>${item.title}</span>
+            `;
+            
+            // 자료 항목 클릭 시 Iframe 뷰어 갱신
+            listItem.addEventListener('click', (e) => {
+              e.stopPropagation(); // 상위 이벤트 전파 차단
+              
+              // 모든 아이템 선택 해제 후 현재 아이템 활성화
+              document.querySelectorAll('.material-item').forEach(el => el.classList.remove('active'));
+              listItem.classList.add('active');
+
+              // 환영 메시지 숨기고 Iframe 보이기
+              welcomeScreen.style.display = 'none';
+              viewer.style.display = 'block';
+              
+              // Iframe 경로 변경 (실행)
+              viewer.src = item.file;
+            });
+
+            materialList.appendChild(listItem);
+          });
+        }
+
+        // 아코디언 토글 로직
+        unitHeader.addEventListener('click', () => {
+          const isOpen = unitSection.classList.contains('open');
+          
+          // (선택 사항) 다른 아코디언을 모두 닫고 싶다면 아래 코드 활성화
+          // document.querySelectorAll('.unit-section').forEach(el => el.classList.remove('open'));
+
+          if (isOpen) {
+            unitSection.classList.remove('open');
+          } else {
+            unitSection.classList.add('open');
+          }
+        });
+
+        unitSection.appendChild(unitHeader);
+        unitSection.appendChild(materialList);
+        menuContainer.appendChild(unitSection);
+      }
+    });
+  </script>
+</body>
+</html>
