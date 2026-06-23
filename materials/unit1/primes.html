@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔢 소수와 합성수 탐구</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Iframe 내에서 꽉 차게 보이도록 설계 */
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --color-one: #64748b;
+      --color-prime: #8b5cf6;
+      --color-composite: #eab308;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 24px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      max-width: 600px;
+    }
+    
+    h1 { font-size: 1.8rem; margin-bottom: 8px; color: #ffffff; }
+    p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+    
+    .container {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .board-info {
+      display: flex;
+      justify-content: space-around;
+      background: #0b0f19;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+    
+    .info-item { display: flex; align-items: center; gap: 6px; }
+    .color-box { width: 14px; height: 14px; border-radius: 3px; }
+    .box-one { background: var(--color-one); }
+    .box-prime { background: var(--color-prime); }
+    .box-composite { background: var(--color-composite); }
+    
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+    }
+    
+    .num-cell {
+      aspect-ratio: 1;
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    
+    .num-cell:hover {
+      transform: scale(1.1);
+      z-index: 1;
+    }
+    
+    .num-cell.is-one { color: var(--color-one); }
+    .num-cell.is-prime { color: #c084fc; border-color: rgba(139, 92, 246, 0.5); }
+    .num-cell.is-composite { color: #fef08a; border-color: rgba(234, 179, 8, 0.4); }
+    
+    .num-cell.selected {
+      transform: scale(1.15);
+      box-shadow: 0 0 12px currentColor;
+      background: currentColor;
+      color: #000 !important;
+      z-index: 2;
+    }
+    
+    .detail-panel {
+      background: #0b0f19;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      text-align: center;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .detail-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
+    .detail-desc { font-size: 0.95rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔢 소수와 합성수 보드게임 (1단원)</h1>
+    <p>1부터 100까지의 카드를 클릭해 소수와 합성수의 성질을 파악해 봅시다. (Iframe 모드)</p>
+  </header>
+  
+  <div class="container">
+    <div class="board-info">
+      <div class="info-item"><div class="color-box box-one"></div><span>1</span></div>
+      <div class="info-item"><div class="color-box box-prime"></div><span>소수 (약수 2개)</span></div>
+      <div class="info-item"><div class="color-box box-composite"></div><span>합성수 (약수 3개 이상)</span></div>
+    </div>
+    
+    <div class="grid-container" id="num-grid"></div>
+    
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-desc">숫자 카드를 클릭하면 약수가 나타납니다.</div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById('num-grid');
+    const panel = document.getElementById('detail-panel');
+    
+    function getDivisors(n) {
+      const divs = [];
+      for(let i = 1; i <= n; i++) {
+        if(n % i === 0) divs.push(i);
+      }
+      return divs;
+    }
+    
+    function getNumberType(n) {
+      if(n === 1) return 'one';
+      const divs = getDivisors(n);
+      return divs.length === 2 ? 'prime' : 'composite';
+    }
+    
+    for(let i = 1; i <= 100; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'num-cell';
+      cell.textContent = i;
+      
+      const type = getNumberType(i);
+      cell.classList.add(`is-${type}`);
+      
+      cell.addEventListener('click', () => {
+        document.querySelectorAll('.num-cell').forEach(c => c.classList.remove('selected'));
+        cell.classList.add('selected');
+        
+        const divs = getDivisors(i);
+        let typeText = type === 'one' ? '1' : type === 'prime' ? '소수' : '합성수';
+        let typeColor = type === 'one' ? 'var(--color-one)' : type === 'prime' ? 'var(--color-prime)' : 'var(--color-composite)';
+        
+        panel.innerHTML = `
+          <div class="detail-title" style="color: ${typeColor}">${i} : ${typeText}</div>
+          <div class="detail-desc" style="color: #fff; margin-bottom: 8px;">약수 (${divs.length}개): ${divs.join(', ')}</div>
+        `;
+      });
+      grid.appendChild(cell);
+    }
+  </script>
+</body>
+</html>

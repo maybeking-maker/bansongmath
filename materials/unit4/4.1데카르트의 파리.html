@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>데카르트의 파리 - 좌표평면 도입</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        #main-container {
+            display: flex;
+            gap: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            align-items: center;
+        }
+
+        #canvas-container {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #ccc;
+            height: 480px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* 오른쪽 패널 고정 설정 (밀림 방지) */
+        #side-panel {
+            width: 320px; 
+            height: 484px; /* 캔버스 컨테이너 박스 높이와 일치시킴 */
+            box-sizing: border-box;
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-content { 
+            display: none; 
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+        
+        /* active 클래스가 붙으면 flex로 표시 */
+        .panel-content.active-panel {
+            display: flex;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #333;
+            word-break: keep-all;
+            margin: 5px 0;
+        }
+        
+        .flying-text {
+            font-size: 1.1rem;
+            color: #888;
+            text-align: center;
+            margin-top: 20px;
+            word-break: keep-all;
+            line-height: 1.6;
+        }
+
+        /* 미션 상자 스타일 */
+        .mission-box {
+            background-color: #fff9c4;
+            border-left: 4px solid #fbc02d;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #444;
+            text-align: left;
+            line-height: 1.5;
+            word-break: keep-all;
+        }
+        .mission-box b {
+            color: #f57f17;
+        }
+
+        /* 입력 폼 영역 */
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .single-input { width: 80%; margin: 0 auto; }
+        
+        .double-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-row input { width: 80px; }
+
+        .check-btn {
+            background-color: #0097e6;
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .check-btn:hover { background-color: #00a8ff; }
+
+        .feedback {
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-height: 1.5rem;
+            text-align: center;
+        }
+        .correct { color: #4cd137; }
+        .wrong { color: #e84118; }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        button.main-btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #stop-btn { background-color: #ff4757; color: white; }
+        #stop-btn:hover { background-color: #ff6b81; transform: translateY(-2px); }
+        
+        #step-btn { background-color: #2ed573; color: white; }
+        #step-btn:hover { background-color: #7bed9f; transform: translateY(-2px); }
+        
+        #desc {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #444;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>데카르트의 파리 🪰</h1>
+    
+    <div id="main-container">
+        <div id="canvas-container">
+            <canvas id="mathCanvas" width="720" height="480"></canvas>
+        </div>
+
+        <div id="side-panel">
+            
+            <div id="step1-ui" class="panel-content active-panel">
+                <p id="step1-flying-text" class="flying-text">파리가 날아다니고 있습니다.<br><br><b>STOP 버튼</b>을 눌러보세요!</p>
+                <div id="step1-input-area" class="input-area" style="display: none;">
+                    <p class="question-text">현재 파리 위치에 대응되는 점은 무엇인가요?</p>
+                    <input type="number" id="student-answer1" class="single-input" placeholder="숫자 입력">
+                    <button class="check-btn" onclick="checkAnswer(1)">확인</button>
+                    <div id="feedback-msg1" class="feedback"></div>
+                </div>
+            </div>
+
+            <div id="step2-ui" class="panel-content">
+                <p id="step2-flying-text" class="flying-text">파리가 날아다니고 있습니다.<br><br><b>STOP 버튼</b>을 눌러보세요!</p>
+                <div id="step2-input-area" class="input-area" style="display: none;">
+                    <p class="question-text" style="text-align: center; margin-top: 30px;">💡 이 파리의 위치를 숫자로 어떻게 나타내면 좋을까요?</p>
+                </div>
+            </div>
+
+            <div id="step3-ui" class="panel-content">
+                <div class="mission-box">
+                    <b>미션1:</b> 파리를 멈춰서 값을 적어보세요.<br>
+                    <b>미션2:</b> 파리를 수직선에 포함되도록 멈춰보세요! 그러면 어떻게 값들을 적어야 할까요?<br>
+                    <b>미션3:</b> 파리를 수직선이 교차되는 점에 멈춰보세요! 그러면 어떻게 값들을 적어야할까요?
+                </div>
+                
+                <p id="step3-flying-text" class="flying-text"><b>STOP 버튼</b>을 눌러<br>미션을 해결해보세요!</p>
+                
+                <div id="step3-input-area" class="input-area" style="display: none;">
+                    <p class="question-text">파리의 위치를 두 개의 숫자로 나타내봅시다!</p>
+                    <div class="double-input-container">
+                        <div class="input-row">
+                            가로선 값: <input type="number" id="student-answer-x">
+                        </div>
+                        <div class="input-row">
+                            세로선 값: <input type="number" id="student-answer-y">
+                        </div>
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer(3)">확인</button>
+                    <div id="feedback-msg3" class="feedback"></div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="stop-btn" class="main-btn" onclick="stopFly()">STOP (파리 멈추기)</button>
+        <button id="step-btn" class="main-btn" onclick="nextStep()">Step 2: 평면으로 이동하기</button>
+    </div>
+    
+    <div id="desc">Step 1: 파리가 가로 수직선 위를 날아다닙니다.</div>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const width = canvas.width;
+    const height = canvas.height;
+    const unit = 60; 
+    const originX = width / 2;
+    const originY = height / 2;
+
+    let step = 1;
+    let isFlying = true;
+    let dashProgress = 0; 
+
+    let fly = { x: 0, y: 0, vx: 0.15, vy: 0.15 };
+
+    function drawBackgroundAndGrid() {
+        ctx.fillStyle = '#e8d5b5'; 
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = '#cba37a'; 
+        ctx.lineWidth = 1;
+
+        for (let x = originX % unit; x <= width; x += unit) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+
+        for (let y = originY % unit; y <= height; y += unit) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+    }
+
+    function drawNumberLines() {
+        ctx.fillStyle = '#3e2723';
+        ctx.font = 'bold 18px Arial';
+
+        // --- 가로 수직선 ---
+        ctx.strokeStyle = '#3e2723';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, originY);
+        ctx.lineTo(width, originY);
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        for (let i = -Math.floor(width/unit); i <= Math.floor(width/unit); i++) {
+            if (i === 0) continue; 
+            const screenX = originX + (i * unit);
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(screenX, originY - 8);
+            ctx.lineTo(screenX, originY + 8);
+            ctx.stroke();
+            ctx.fillText(i, screenX, originY + 15);
+        }
+
+        // --- 세로 수직선 (Step 3) ---
+        if (step === 3) {
+            ctx.strokeStyle = '#3e2723';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, height);
+            ctx.stroke();
+
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            for (let i = -Math.floor(height/unit); i <= Math.floor(height/unit); i++) {
+                if (i === 0) continue; 
+                const screenY = originY - (i * unit);
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(originX - 8, screenY);
+                ctx.lineTo(originX + 8, screenY);
+                ctx.stroke();
+                ctx.fillText(i, originX - 16, screenY);
+            }
+        }
+
+        // --- 원점 (0) ---
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText("0", originX - 10, originY + 10);
+    }
+
+    function drawDottedLines() {
+        const startX = originX + fly.x * unit;
+        const startY = originY - fly.y * unit;
+
+        ctx.save();
+        ctx.strokeStyle = '#e74c3c'; 
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 8]); 
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        const targetY = startY + (originY - startY) * dashProgress;
+        ctx.lineTo(startX, targetY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        const targetX = startX + (originX - startX) * dashProgress;
+        ctx.lineTo(targetX, startY);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function drawFly() {
+        const screenX = originX + fly.x * unit;
+        const screenY = originY - fly.y * unit;
+
+        ctx.font = '40px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🪰', screenX, screenY);
+    }
+
+    function updateFly() {
+        if (!isFlying) return;
+
+        fly.vx += (Math.random() - 0.5) * 0.05;
+        if(fly.vx > 0.15) fly.vx = 0.15;
+        if(fly.vx < -0.15) fly.vx = -0.15;
+        fly.x += fly.vx;
+
+        if (step >= 2) {
+            fly.vy += (Math.random() - 0.5) * 0.05;
+            if(fly.vy > 0.15) fly.vy = 0.15;
+            if(fly.vy < -0.15) fly.vy = -0.15;
+            fly.y += fly.vy;
+        } else {
+            fly.y = 0;
+            fly.vy = 0;
+        }
+
+        const maxX = (originX / unit) - 0.5;
+        const maxY = (originY / unit) - 0.5;
+
+        if (fly.x > maxX) { fly.x = maxX; fly.vx *= -1; }
+        if (fly.x < -maxX) { fly.x = -maxX; fly.vx *= -1; }
+        
+        if (step >= 2) {
+            if (fly.y > maxY) { fly.y = maxY; fly.vy *= -1; }
+            if (fly.y < -maxY) { fly.y = -maxY; fly.vy *= -1; }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        drawBackgroundAndGrid();
+        drawNumberLines();
+
+        if (!isFlying && step === 3) {
+            drawDottedLines();
+            if (dashProgress < 1) {
+                dashProgress += 0.04; 
+            }
+        }
+
+        updateFly();
+        drawFly();
+
+        requestAnimationFrame(animate);
+    }
+
+    // 비행 상태에 맞춰 내부 UI 요소들을 깔끔하게 스위칭하는 함수 (밀림 방지 핵심)
+    function updateUI() {
+        // 모든 패널 숨기기
+        document.getElementById('step1-ui').classList.remove('active-panel');
+        document.getElementById('step2-ui').classList.remove('active-panel');
+        document.getElementById('step3-ui').classList.remove('active-panel');
+        
+        // 현재 스텝 패널 활성화
+        const currentPanel = document.getElementById(`step${step}-ui`);
+        currentPanel.classList.add('active-panel');
+
+        // 스텝별 비행/정지 상태 세부 UI 조절
+        const flyingText = document.getElementById(`step${step}-flying-text`);
+        const inputArea = document.getElementById(`step${step}-input-area`);
+
+        if (isFlying) {
+            if(flyingText) flyingText.style.display = 'block';
+            if(inputArea) inputArea.style.display = 'none';
+        } else {
+            if(flyingText) flyingText.style.display = 'none';
+            if(inputArea) inputArea.style.display = 'flex';
+        }
+    }
+
+    function stopFly() {
+        if (!isFlying) {
+            isFlying = true;
+            document.getElementById('stop-btn').innerText = "STOP (파리 멈추기)";
+            updateUI();
+            return;
+        }
+
+        isFlying = false;
+        fly.x = Math.round(fly.x);
+        
+        if (step >= 2) {
+            fly.y = Math.round(fly.y);
+        } else {
+            fly.y = 0;
+        }
+
+        document.getElementById('stop-btn').innerText = "다시 날기";
+
+        if (step === 1) {
+            document.getElementById('student-answer1').value = '';
+            document.getElementById('feedback-msg1').innerHTML = '';
+        } else if (step === 3) {
+            document.getElementById('student-answer-x').value = '';
+            document.getElementById('student-answer-y').value = '';
+            document.getElementById('feedback-msg3').innerHTML = '';
+            dashProgress = 0; 
+        }
+
+        updateUI();
+    }
+
+    function checkAnswer(currentStep) {
+        if (currentStep === 1) {
+            const inputVal = document.getElementById('student-answer1').value;
+            const feedback = document.getElementById('feedback-msg1');
+
+            if (inputVal === "") {
+                feedback.innerHTML = "숫자를 입력해주세요!";
+                feedback.className = "feedback wrong";
+                return;
+            }
+
+            if (parseInt(inputVal) === fly.x) {
+                feedback.innerHTML = "정답입니다! 🟢";
+                feedback.className = "feedback correct";
+            } else {
+                feedback.innerHTML = "다시 생각해보세요 ❌";
+                feedback.className = "feedback wrong";
+            }
+        } 
+        else if (currentStep === 3) {
+            const inputX = document.getElementById('student-answer-x').value;
+            const inputY = document.getElementById('student-answer-y').value;
+            const feedback = document.getElementById('feedback-msg3');
+
+            if (inputX === "" || inputY === "") {
+                feedback.innerHTML = "두 숫자를 모두 적어주세요!";
+                feedback.className = "feedback wrong";
+                return;
+            }
+
+            if (parseInt(inputX) === fly.x && parseInt(inputY) === fly.y) {
+                feedback.innerHTML = "정답입니다! 🟢";
+                feedback.className = "feedback correct";
+            } else {
+                feedback.innerHTML = "다시 생각해보세요 ❌";
+                feedback.className = "feedback wrong";
+            }
+        }
+    }
+
+    function nextStep() {
+        const btn = document.getElementById('step-btn');
+        const desc = document.getElementById('desc');
+
+        if (step === 1) {
+            step = 2;
+            btn.innerText = "Step 3: 세로 수직선 추가하기";
+            desc.innerText = "Step 2: 평면을 자유롭게 날아다닙니다. (가로 수직선만 존재)";
+        } else if (step === 2) {
+            step = 3;
+            btn.innerText = "Step 1: 처음으로 돌아가기";
+            desc.innerText = "Step 3: 세로 수직선이 등장했습니다! 파리의 위치를 두 숫자로 나타내보세요.";
+        } else {
+            step = 1;
+            btn.innerText = "Step 2: 평면으로 이동하기";
+            desc.innerText = "Step 1: 파리가 가로 수직선 위를 날아다닙니다.";
+            fly.y = 0;
+        }
+        
+        isFlying = true;
+        document.getElementById('stop-btn').innerText = "STOP (파리 멈추기)";
+        
+        fly.x = 0; 
+        fly.vx = 0.15; 
+        fly.vy = 0.15;
+
+        updateUI();
+    }
+
+    animate();
+</script>
+</body>
+</html>

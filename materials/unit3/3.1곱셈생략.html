@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수학 언어 청소기 !</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f6f9;
+            text-align: center;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .rules {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #34495e;
+            line-height: 1.6;
+        }
+        .rules ul { margin: 5px 0 0 0; padding-left: 20px; }
+        
+        .input-area {
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            width: 70%;
+            height: 50px;
+            font-size: 24px;
+            text-align: center;
+            border: 3px solid #bdc3c7;
+            border-radius: 12px;
+            padding: 0 10px;
+            transition: border-color 0.3s;
+            background-color: #fafafa;
+        }
+        input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+            background-color: #fff;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .step-container {
+            margin-top: 30px;
+            min-height: 300px;
+        }
+        .step {
+            margin: 25px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+            display: none;
+        }
+        .step.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .step-title {
+            font-size: 16px;
+            color: #e67e22;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .equation {
+            font-size: 32px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .block {
+            background-color: #fffacd;
+            padding: 5px 15px;
+            border-radius: 10px;
+            border: 2px solid #f1c40f;
+            margin: 0 5px;
+        }
+        .mul-sign {
+            color: #e74c3c;
+            margin: 0 10px;
+            transition: opacity 1.5s ease;
+        }
+        .mul-sign.fade-out {
+            opacity: 0;
+        }
+        
+        .final-result {
+            font-size: 45px;
+            color: #27ae60;
+            background-color: #eafaf1;
+            padding: 15px 40px;
+            border-radius: 20px;
+            border: 3px dashed #2ecc71;
+            display: inline-block;
+        }
+        sup {
+            font-size: 22px;
+            color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧹 수학 언어 청소기 ! ✨</h1>
+    <p class="subtitle">키보드로 <b>*</b>을 입력하면 자동으로 곱셈 기호(<b>×</b>)로 바뀌어요!</p>
+
+    <div class="rules">
+        <strong>💡 청소 규칙:</strong>
+        <ul>
+            <li>수와 문자의 곱: 수는 문자 앞에!</li>
+            <li>문자와 문자의 곱: 알파벳 순서대로!</li>
+            <li>같은 문자의 곱: 거듭제곱으로 깔끔하게!</li>
+            <li>괄호가 있는 식: 곱해지는 수는 괄호 앞에!</li>
+            <li style="color: #e74c3c; font-weight: bold;">🚫 주의: 문자나 괄호 바로 앞에는 음의 부호(-)를 쓸 수 없어요! (-1 × a 처럼 나누어 써주세요)</li>
+        </ul>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="mathInput" placeholder="예: -2 × -3 × a × b" value="-2 × -3 × a × b">
+        <br>
+        <button onclick="startCleaning()">청소 시작!</button>
+    </div>
+
+    <div class="step-container">
+        <div class="step" id="step1">
+            <div class="step-title">1. 입력된 원래 식</div>
+            <div class="equation" id="eq1"></div>
+        </div>
+
+        <div class="step" id="step2">
+            <div class="step-title">2. 규칙에 맞춰 자리 이동! (숫자 ➔ 알파벳 ➔ 괄호)</div>
+            <div class="equation" id="eq2"></div>
+        </div>
+
+        <div class="step" id="step3">
+            <div class="step-title">3. 곱셈 기호 생략! (스르륵 사라집니다 🧼)</div>
+        </div>
+
+        <div class="step" id="step4">
+            <div class="step-title">4. 거듭제곱 정리 및 청소 완료! ✨</div>
+            <div class="equation"><span class="final-result" id="eqFinal"></span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const inputEl = document.getElementById('mathInput');
+
+    // 키보드로 *를 입력하면 즉시 × 기호로 변경하는 이벤트 리스너
+    inputEl.addEventListener('input', function(e) {
+        let position = this.selectionStart; // 커서 위치 기억
+        let originalLength = this.value.length;
+        
+        // * 기호를 × 기호로 변환 (양옆에 공백을 한 칸씩 주어 가독성 향상)
+        this.value = this.value.replace(/\*/g, ' × ');
+        // 연속된 공백 방지 및 다듬기
+        this.value = this.value.replace(/\s+/g, ' ');
+
+        // 커서 위치 재조정
+        let newLength = this.value.length;
+        this.setSelectionRange(position + (newLength - originalLength), position + (newLength - originalLength));
+    });
+
+    function resetSteps() {
+        ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+            const el = document.getElementById(id);
+            el.classList.remove('visible');
+            el.style.display = 'none';
+        });
+        document.getElementById('eq1').innerHTML = '';
+        document.getElementById('eq2').innerHTML = '';
+        document.getElementById('eqFinal').innerHTML = '';
+    }
+
+    function startCleaning() {
+        resetSteps();
+
+        const input = inputEl.value;
+        if (!input.includes('×')) {
+            alert('곱셈 기호(×) 또는 * 키를 사용해서 식을 입력해주세요!');
+            return;
+        }
+
+        // × 기호를 기준으로 식 분리
+        const parts = input.split('×').map(s => s.trim()).filter(s => s !== '');
+        
+        let nums = [];
+        let vars = [];
+        let parens = [];
+
+        // 🔍 문자 앞 음의 부호(-) 검사 및 분류
+        for (let p of parts) {
+            // 만약 숫자가 아닌데(문자나 괄호인데) -로 시작한다면 경고창 띄우기
+            if (isNaN(p) && p.startsWith('-')) {
+                alert('⚠️ 경고: 문자나 괄호 앞에는 음의 부호(-)를 직접 붙일 수 없습니다!\n\n학생들에게 [수와 문자의 곱] 형태로 적도록 안내해주세요.\n(예: -a 대신 -1 × a)');
+                return; // 함수 종료 (계산 안 됨)
+            }
+
+            if (!isNaN(p)) {
+                nums.push(p); // 숫자
+            } else if (p.startsWith('(') && p.endsWith(')')) {
+                parens.push(p); // 괄호
+            } else {
+                vars.push(p); // 문자
+            }
+        }
+
+        // 문자들은 알파벳 순서로 정렬
+        vars.sort();
+
+        // 정렬된 배열 (숫자 -> 문자 -> 괄호)
+        const sortedParts = [...nums, ...vars, ...parens];
+
+        // 최종 결과 계산 로직
+        let finalNum = 1;
+        let hasNum = false;
+        nums.forEach(n => {
+            finalNum *= parseFloat(n);
+            hasNum = true;
+        });
+
+        // 1이나 -1 생략 처리
+        let numStr = "";
+        if (hasNum) {
+            if (finalNum === 1 && (vars.length > 0 || parens.length > 0)) numStr = "";
+            else if (finalNum === -1 && (vars.length > 0 || parens.length > 0)) numStr = "-";
+            else numStr = finalNum.toString();
+        }
+
+        // 거듭제곱 처리
+        let varCounts = {};
+        vars.forEach(v => {
+            varCounts[v] = (varCounts[v] || 0) + 1;
+        });
+        
+        let varStr = "";
+        for (let v in varCounts) {
+            if (varCounts[v] > 1) {
+                varStr += `${v}<sup>${varCounts[v]}</sup>`;
+            } else {
+                varStr += v;
+            }
+        }
+
+        // 괄호 거듭제곱 처리
+        let parenCounts = {};
+        parens.forEach(p => {
+            parenCounts[p] = (parenCounts[p] || 0) + 1;
+        });
+        
+        let parenStr = "";
+        for (let p in parenCounts) {
+            if (parenCounts[p] > 1) {
+                parenStr += `${p}<sup>${parenCounts[p]}</sup>`;
+            } else {
+                parenStr += p;
+            }
+        }
+
+        // 숫자가 단독으로 1이나 -1이고 뒤에 문자가 없으면 그대로 출력
+        if (hasNum && vars.length === 0 && parens.length === 0) {
+            numStr = finalNum.toString();
+        }
+
+        const finalResult = numStr + varStr + parenStr;
+
+        // --- 애니메이션 출력 ---
+        const eq1Html = parts.map(p => `<span class="block">${p}</span>`).join('<span class="mul-sign">×</span>');
+        document.getElementById('eq1').innerHTML = eq1Html;
+        
+        const eq2Html = sortedParts.map(p => `<span class="block">${p}</span>`).join('<span class="mul-sign eq2-mul">×</span>');
+        document.getElementById('eq2').innerHTML = eq2Html;
+
+        document.getElementById('eqFinal').innerHTML = finalResult;
+
+        const s1 = document.getElementById('step1');
+        const s2 = document.getElementById('step2');
+        const s3 = document.getElementById('step3');
+        const s4 = document.getElementById('step4');
+
+        s1.style.display = 'block';
+        setTimeout(() => s1.classList.add('visible'), 100);
+
+        setTimeout(() => {
+            s2.style.display = 'block';
+            setTimeout(() => s2.classList.add('visible'), 50);
+        }, 1500);
+
+        setTimeout(() => {
+            s3.style.display = 'block';
+            setTimeout(() => s3.classList.add('visible'), 50);
+            
+            const signs = document.querySelectorAll('.eq2-mul');
+            signs.forEach(sign => sign.classList.add('fade-out'));
+        }, 3500);
+
+        setTimeout(() => {
+            s4.style.display = 'block';
+            setTimeout(() => s4.classList.add('visible'), 50);
+        }, 5500);
+    }
+</script>
+
+</body>
+</html>
