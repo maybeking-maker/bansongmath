@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>대입: 3점슛 농구 게임 2.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --bg-dark: #0f172a;
+      --panel-bg: rgba(30, 41, 59, 0.9);
+      --text: #f8fafc;
+      --accent: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #0f172a;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none; /* Prevent scroll on touch */
+    }
+
+    .app-container {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      height: 600px;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    /* Screens */
+    .screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.95);
+      z-index: 20;
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+
+    .glass-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      max-width: 550px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    h1 {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 15px;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(249, 115, 22, 0.5);
+    }
+
+    h2 { font-size: 2rem; margin-bottom: 15px; color: var(--primary); }
+
+    p { font-size: 1.15rem; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #d946ef);
+      color: white;
+      border: none;
+      padding: 16px 40px;
+      font-size: 1.25rem;
+      font-weight: 900;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Noto Sans KR', sans-serif;
+      box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+    }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(249, 115, 22, 0.6); }
+    .btn:active { transform: translateY(1px); }
+
+    /* Game UI */
+    canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5;
+      background: url('file:///C:/Users/USER/.gemini/antigravity/brain/54bdddf9-675a-428d-bc06-c9a48efd6b97/basketball_court_1782821910663.png') center/cover no-repeat;
+    }
+
+    .hud {
+      position: absolute; top: 20px; left: 0; width: 100%; padding: 0 30px;
+      display: flex; justify-content: space-between; z-index: 10; pointer-events: none;
+    }
+
+    .hud-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      color: #fff;
+    }
+    .hud-box.timer { color: #38bdf8; }
+    .hud-box.score { color: #facc15; }
+
+    .instruction-toast {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95);
+      color: #0f172a;
+      padding: 12px 30px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      z-index: 15;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    /* Input styling */
+    .input-group {
+      display: flex; justify-content: center; align-items: center; gap: 15px; margin: 25px 0;
+      font-size: 1.8rem; font-weight: 900; font-family: 'Outfit', sans-serif;
+    }
+    .calc-input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid #475569;
+      color: #fff;
+      font-size: 1.8rem;
+      font-weight: 900;
+      padding: 10px;
+      border-radius: 12px;
+      width: 120px;
+      text-align: center;
+      outline: none;
+      transition: all 0.3s;
+    }
+    .calc-input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
+    .feedback { font-weight: 700; font-size: 1.1rem; min-height: 24px; margin-top: 15px; }
+
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Title Screen -->
+    <div id="startScreen" class="screen active">
+      <div class="glass-panel">
+        <h1>🏀 리얼 3점슛 챌린지</h1>
+        <p><strong>'대입'</strong>의 개념을 농구로 배워볼까요?</p>
+        <p style="text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; font-size: 1rem;">
+          🕹️ <strong>조작 방법:</strong><br>
+          1. 화면을 <strong>클릭</strong>하여 공이 날아갈 <strong>각도</strong>를 맞춥니다.<br>
+          2. 다시 화면을 <strong>꾹 누르고 있으면</strong> 세기가 올라갑니다.<br>
+          3. 알맞은 세기일 때 <strong>손을 떼면</strong> 슛을 쏩니다!
+        </p>
+        <button class="btn" onclick="startGame()">게임 시작</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+      <div class="hud">
+        <div class="hud-box timer">⏱️ <span id="timeDisplay">60</span>s</div>
+        <div class="hud-box score">🏀 <span id="goalsDisplay">0</span> 골</div>
+      </div>
+      
+      <canvas id="gameCanvas" width="900" height="600"></canvas>
+      <div id="toast" class="instruction-toast">화면을 클릭하여 각도를 맞추세요!</div>
+    </div>
+
+    <!-- Result Screen 1: My Score -->
+    <div id="resultScreen1" class="screen">
+      <div class="glass-panel">
+        <h2>⏰ 타임 오버!</h2>
+        <p>훌륭합니다! 60초 동안 총 <strong style="color:var(--primary); font-size: 1.5rem;"><span id="actualGoals"></span>골</strong>을 넣었습니다.</p>
+        <p>3점슛의 점수 계산식은 <strong>3x</strong> 입니다. (x = 넣은 골의 수)<br>
+           그렇다면 당신이 얻은 최종 점수는 몇 점일까요?</p>
+        <div class="input-group">
+          3 × <span id="actualGoals2" style="color:var(--primary);"></span> = 
+          <input type="number" id="myScoreInput" class="calc-input" placeholder="정답"> 점
+        </div>
+        <button class="btn" onclick="checkMyScore()">정답 확인</button>
+        <div id="myScoreFeedback" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Result Screen 2: Random Quiz -->
+    <div id="resultScreen2" class="screen">
+      <div class="glass-panel">
+        <h2>🎉 정답입니다!</h2>
+        <p>대입의 개념을 완벽히 이해하셨군요!<br>그럼 마지막으로 <strong>하나만 더</strong> 계산해볼까요?</p>
+        <p style="font-size: 1.3rem;">만약 당신이 <strong style="color:var(--accent);"><span id="randomGoals"></span>골</strong>을 넣었다면<br>점수가 어떻게 될까요?</p>
+        <div class="input-group">
+          3 × <span id="randomGoals2" style="color:var(--accent);"></span> = 
+          <input type="number" id="randomScoreInput" class="calc-input" placeholder="정답"> 점
+        </div>
+        <button class="btn" onclick="checkRandomScore()">최종 확인</button>
+        <div id="randomScoreFeedback" class="feedback"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // System & State
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('toast');
+    
+    // States: START -> ANGLE_SELECT -> POWER_CHARGE -> SHOOTING -> END
+    let gameState = 'START';
+    let timeRemaining = 60;
+    let goals = 0;
+    let timerInterval;
+    let animationId;
+
+    // Game Physics & Params
+    const GRAVITY = 0.5;
+    let angle = 45;
+    let angleDir = 1;
+    let power = 20;
+    let powerDir = 1;
+    
+    let ball = { x: 120, y: 450, radius: 18, vx: 0, vy: 0, rotation: 0, vRot: 0 };
+    const hoop = { x: 740, y: 220, width: 65, thickness: 8 };
+    let particles = [];
+
+    // Interaction Listeners
+    function handleInputStart(e) {
+      if (e.type === 'touchstart') e.preventDefault();
+      
+      if (gameState === 'ANGLE_SELECT') {
+        gameState = 'POWER_CHARGE';
+        power = 20;
+        powerDir = 1;
+        toast.innerText = "꾹 누르고 있다가 알맞을 때 손을 떼세요!";
+      } else if (gameState === 'SHOOTING') {
+        // block input while ball is flying
+      }
+    }
+
+    function handleInputEnd(e) {
+      if (e.type === 'touchend') e.preventDefault();
+      
+      if (gameState === 'POWER_CHARGE') {
+        gameState = 'SHOOTING';
+        toast.style.opacity = 0; // hide toast while flying
+        shootBall();
+      }
+    }
+
+    canvas.addEventListener('mousedown', handleInputStart);
+    canvas.addEventListener('mouseup', handleInputEnd);
+    canvas.addEventListener('touchstart', handleInputStart, {passive: false});
+    canvas.addEventListener('touchend', handleInputEnd, {passive: false});
+
+    // Screen Management
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function startGame() {
+      switchScreen('gameScreen');
+      goals = 0; timeRemaining = 60;
+      document.getElementById('goalsDisplay').innerText = goals;
+      document.getElementById('timeDisplay').innerText = timeRemaining;
+      
+      resetShot();
+      
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        document.getElementById('timeDisplay').innerText = timeRemaining;
+        if (timeRemaining <= 0) endGame();
+      }, 1000);
+
+      if(animationId) cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function resetShot() {
+      if(timeRemaining <= 0) return;
+      ball.x = 120; ball.y = 450; ball.vx = 0; ball.vy = 0; ball.vRot = 0;
+      gameState = 'ANGLE_SELECT';
+      toast.innerText = "화면을 클릭(터치)하여 각도를 고정하세요!";
+      toast.style.opacity = 1;
+    }
+
+    function shootBall() {
+      const rad = angle * Math.PI / 180;
+      const velMulti = 0.38; // fine tune this for game feel
+      ball.vx = Math.cos(rad) * power * velMulti;
+      ball.vy = -Math.sin(rad) * power * velMulti;
+      ball.vRot = (Math.random() - 0.5) * 0.5; // add spin
+    }
+
+    function endGame() {
+      clearInterval(timerInterval);
+      gameState = 'END';
+      cancelAnimationFrame(animationId);
+      
+      // Setup Screen 1
+      document.getElementById('actualGoals').innerText = goals;
+      document.getElementById('actualGoals2').innerText = goals;
+      document.getElementById('myScoreInput').value = '';
+      document.getElementById('myScoreFeedback').innerText = '';
+      
+      setTimeout(() => switchScreen('resultScreen1'), 1000);
+    }
+
+    // Checking Logics
+    function checkMyScore() {
+      const input = parseInt(document.getElementById('myScoreInput').value);
+      const feedback = document.getElementById('myScoreFeedback');
+      if (input === goals * 3) {
+        // Correct -> Go to Screen 2
+        setupRandomQuiz();
+        switchScreen('resultScreen2');
+      } else {
+        feedback.style.color = '#ef4444';
+        feedback.innerText = "아쉽네요. 다시 한번 계산해 볼까요? (3 × 넣은 골 수)";
+      }
+    }
+
+    let currentRandomGoals = 0;
+    function setupRandomQuiz() {
+      currentRandomGoals = Math.floor(Math.random() * 40) + 10; // 10 ~ 49
+      document.getElementById('randomGoals').innerText = currentRandomGoals;
+      document.getElementById('randomGoals2').innerText = currentRandomGoals;
+      document.getElementById('randomScoreInput').value = '';
+      document.getElementById('randomScoreFeedback').innerText = '';
+    }
+
+    function checkRandomScore() {
+      const input = parseInt(document.getElementById('randomScoreInput').value);
+      const feedback = document.getElementById('randomScoreFeedback');
+      if (input === currentRandomGoals * 3) {
+        feedback.style.color = '#4ade80';
+        feedback.innerText = "정답입니다! 대입의 달인이 되셨군요! 🎉";
+        setTimeout(() => switchScreen('startScreen'), 2500);
+      } else {
+        feedback.style.color = '#ef4444';
+        feedback.innerText = "조금만 더 생각해볼까요? 식은 3x 입니다!";
+      }
+    }
+
+    // Graphic Renderers
+    function drawRealisticBasketball(ctx, x, y, r, rot) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      
+      // Base Ball with Shading
+      const grad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.1, 0, 0, r);
+      grad.addColorStop(0, '#f97316');
+      grad.addColorStop(0.8, '#c2410c');
+      grad.addColorStop(1, '#7c2d12');
+      
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2);
+      ctx.fillStyle = grad; ctx.fill();
+      
+      // Lines
+      ctx.strokeStyle = '#431407'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, -r); ctx.lineTo(0, r);
+      ctx.moveTo(-r, 0); ctx.lineTo(r, 0);
+      ctx.moveTo(-r*0.7, -r*0.7); ctx.quadraticCurveTo(0, 0, -r*0.7, r*0.7);
+      ctx.moveTo(r*0.7, -r*0.7); ctx.quadraticCurveTo(0, 0, r*0.7, r*0.7);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawHoopBack(ctx) {
+      // Glass Backboard
+      ctx.fillStyle = 'rgba(240, 248, 255, 0.25)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.roundRect(hoop.x + hoop.width + 15, hoop.y - 130, 15, 170, 5);
+      ctx.fill(); ctx.stroke();
+
+      // Red Square
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+      ctx.strokeRect(hoop.x + hoop.width + 12, hoop.y - 60, 6, 50);
+
+      // Back half of Rim & Net
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath(); ctx.ellipse(hoop.x + hoop.width/2, hoop.y, hoop.width/2, hoop.thickness, 0, Math.PI, Math.PI*2); ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for(let i=0; i<=hoop.width; i+=10) { ctx.moveTo(hoop.x+i, hoop.y); ctx.lineTo(hoop.x+i*0.8+6, hoop.y+55); }
+      ctx.stroke();
+    }
+
+    function drawHoopFront(ctx) {
+      // Front half of Rim & Net
+      ctx.fillStyle = '#c2410c'; // darker for 3D effect
+      ctx.beginPath(); ctx.ellipse(hoop.x + hoop.width/2, hoop.y, hoop.width/2, hoop.thickness, 0, 0, Math.PI); ctx.fill();
+      
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for(let i=0; i<=hoop.width; i+=10) { ctx.moveTo(hoop.x+i, hoop.y); ctx.lineTo(hoop.x+i*0.8+6, hoop.y+55); }
+      for(let j=10; j<=50; j+=10) { ctx.moveTo(hoop.x + j*0.1, hoop.y+j); ctx.lineTo(hoop.x + hoop.width - j*0.1, hoop.y+j); }
+      ctx.stroke();
+    }
+
+    function drawPlayer(ctx) {
+      ctx.save();
+      const px = 95;
+      const py = 450; 
+      
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath(); ctx.ellipse(px, py+30, 25, 6, 0, 0, Math.PI*2); ctx.fill();
+
+      // Legs
+      ctx.fillStyle = '#c88753'; 
+      ctx.beginPath(); ctx.roundRect(px-12, py-5, 8, 30, 4); ctx.fill(); 
+      ctx.beginPath(); ctx.roundRect(px+4, py-5, 8, 30, 4); ctx.fill(); 
+      
+      // Sneakers
+      ctx.fillStyle = '#f1f5f9';
+      ctx.beginPath(); ctx.roundRect(px-16, py+20, 16, 10, 5); ctx.fill(); 
+      ctx.beginPath(); ctx.roundRect(px+2, py+20, 16, 10, 5); ctx.fill(); 
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(px-12, py+25, 8, 3);
+      ctx.fillRect(px+6, py+25, 8, 3);
+
+      // Shorts (Jersey bottom)
+      ctx.fillStyle = '#1e3a8a'; 
+      ctx.beginPath(); ctx.roundRect(px-15, py-30, 30, 30, 3); ctx.fill();
+      ctx.fillStyle = '#facc15'; 
+      ctx.fillRect(px-15, py-5, 30, 4);
+      ctx.fillRect(px-15, py-30, 30, 4);
+
+      // Torso (Jersey top)
+      ctx.fillStyle = '#1e3a8a';
+      ctx.beginPath(); ctx.roundRect(px-14, py-70, 28, 45, 5); ctx.fill();
+      
+      // Jersey number
+      ctx.fillStyle = '#facc15';
+      ctx.font = '900 16px Outfit';
+      ctx.textAlign = 'center';
+      ctx.fillText('7', px, py-40);
+
+      // Arms
+      ctx.fillStyle = '#c88753'; 
+      ctx.beginPath(); ctx.roundRect(px-20, py-70, 8, 35, 4); ctx.fill(); 
+      ctx.beginPath(); ctx.roundRect(px+12, py-70, 8, 35, 4); ctx.fill(); 
+
+      // Head
+      ctx.fillStyle = '#c88753';
+      ctx.beginPath(); ctx.arc(px, py-85, 14, 0, Math.PI*2); ctx.fill();
+      
+      // Hair & Headband
+      ctx.fillStyle = '#111827';
+      ctx.beginPath(); ctx.arc(px, py-90, 14, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(px-13, py-90, 26, 6);
+
+      ctx.restore();
+    }
+
+    function createParticles(x, y) {
+      for(let i=0; i<25; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+          life: 1, color: ['#f97316', '#facc15', '#ffffff'][Math.floor(Math.random()*3)]
+        });
+      }
+    }
+
+    // Main Game Loop
+    function gameLoop() {
+      if (gameState === 'END') return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Update Logics
+      if (gameState === 'ANGLE_SELECT') {
+        angle += 1.5 * angleDir;
+        if(angle > 75) { angle = 75; angleDir = -1; }
+        if(angle < 15) { angle = 15; angleDir = 1; }
+      }
+      
+      if (gameState === 'POWER_CHARGE') {
+        power += 2.0 * powerDir;
+        if(power > 100) { power = 100; powerDir = -1; }
+        if(power < 20) { power = 20; powerDir = 1; }
+      }
+
+      // Ball Physics
+      if (gameState === 'SHOOTING') {
+        const prevY = ball.y;
+        ball.vy += GRAVITY;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        ball.rotation += ball.vRot;
+        
+        // Out of bounds -> reset
+        if (ball.y > canvas.height + 50 || ball.x > canvas.width + 50) resetShot();
+        
+        // Scoring (passing through hoop center top-down)
+        if (prevY < hoop.y && ball.y >= hoop.y) {
+           if (ball.x > hoop.x && ball.x < hoop.x + hoop.width) {
+               goals++;
+               document.getElementById('goalsDisplay').innerText = goals;
+               createParticles(hoop.x + hoop.width/2, hoop.y + 10);
+               setTimeout(() => { if(gameState === 'SHOOTING') resetShot(); }, 600);
+           }
+        }
+        
+        // Backboard collision bounce
+        const boardX = hoop.x + hoop.width + 10;
+        if (ball.x + ball.radius > boardX && ball.x < boardX + 20) {
+            if (ball.y > hoop.y - 120 && ball.y < hoop.y + 20) {
+                ball.vx = -ball.vx * 0.6; // bounce
+                ball.x = boardX - ball.radius;
+            }
+        }
+      }
+
+      // --- RENDERING ---
+      drawPlayer(ctx);
+
+      // Aim Line (if not shooting)
+      if (gameState !== 'SHOOTING') {
+        ctx.beginPath(); ctx.moveTo(ball.x, ball.y);
+        const rad = angle * Math.PI / 180;
+        const lineLen = gameState === 'POWER_CHARGE' ? power * 2 : 100; // line grows with power
+        ctx.lineTo(ball.x + Math.cos(rad)*lineLen, ball.y - Math.sin(rad)*lineLen);
+        ctx.strokeStyle = gameState === 'POWER_CHARGE' ? '#f97316' : 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = gameState === 'POWER_CHARGE' ? 4 : 2;
+        ctx.setLineDash([8, 8]); ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      // Draw Power Bar HUD if charging
+      if (gameState === 'POWER_CHARGE') {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(ball.x - 30, ball.y + 30, 60, 10);
+        ctx.fillStyle = power > 80 ? '#ef4444' : power > 50 ? '#facc15' : '#4ade80';
+        ctx.fillRect(ball.x - 30, ball.y + 30, (power/100)*60, 10);
+      }
+
+      drawHoopBack(ctx);
+      drawRealisticBasketball(ctx, ball.x, ball.y, ball.radius, ball.rotation);
+      drawHoopFront(ctx);
+
+      // Particles
+      for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+        if(p.life <= 0) { particles.splice(i, 1); continue; }
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+      }
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>

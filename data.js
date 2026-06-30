@@ -14,6 +14,7 @@ const mathData = {
   ],
   "3단원 문자의 사용과 식": [
     { title: "3.1곱셈생략", file: "materials/unit3/3.1곱셈생략.html" },
+    { title: "3.2농구대입", file: "materials/unit3/3.2농구대입.html" },
     { title: "3.3용어미로찾기", file: "materials/unit3/3.3용어미로찾기.html" }
   ],
   "4단원 좌표평면과 그래프": [
