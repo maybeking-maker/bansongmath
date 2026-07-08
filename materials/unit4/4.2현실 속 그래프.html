@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>그래프의 이해 동기유발 3.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --success: #4ade80;
+      --error: #ef4444;
+      --bg-dark: #0f172a;
+      --text: #f8fafc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text);
+      background: var(--bg-dark);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      transition: background 0.5s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .overlay-dim {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 1;
+    }
+
+    .glass-panel {
+      position: relative;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 20px 30px;
+      width: 95%;
+      max-width: 1200px;
+      height: 90vh;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .light-theme {
+      background: rgba(255, 255, 255, 0.95) !important;
+      color: #0f172a !important;
+      border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-back {
+      background: rgba(255, 255, 255, 0.1);
+      color: inherit;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+    .btn-back:hover { background: rgba(255, 255, 255, 0.2); }
+    .light-theme .btn-back { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+    .light-theme .btn-back:hover { background: rgba(0,0,0,0.1); }
+
+    /* Menu Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 100%;
+      height: 100%;
+      align-content: center;
+    }
+
+    .menu-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: left;
+    }
+
+    .menu-card:hover {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: var(--primary);
+      transform: translateY(-5px);
+    }
+
+    .menu-card h3 { font-size: 1.8rem; margin-bottom: 10px; color: #fff; }
+    .menu-card p { font-size: 1.1rem; color: #cbd5e1; }
+
+    /* Scenario Grid (2x3 Layout) */
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: 32vh 1fr;
+      gap: 12px;
+      flex-grow: 1;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .event-box {
+      grid-column: span 2;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      height: 100%;
+    }
+    .light-theme .event-box { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+
+    .event-box iframe {
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+    }
+
+    .event-text {
+      padding: 20px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: inherit;
+    }
+
+    /* Cinematic Effects for Game */
+    .cinematic-box {
+      background: #111;
+      color: #fff;
+    }
+    .cine-shake { animation: shake 0.5s infinite; }
+    .cine-red { box-shadow: inset 0 0 50px red; border-color: red; }
+    @keyframes shake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-1px, -2px) rotate(-1deg); }
+      20% { transform: translate(-3px, 0px) rotate(1deg); }
+      30% { transform: translate(3px, 2px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(1deg); }
+      50% { transform: translate(-1px, 2px) rotate(-1deg); }
+      60% { transform: translate(-3px, 1px) rotate(0deg); }
+      70% { transform: translate(3px, 1px) rotate(-1deg); }
+      80% { transform: translate(-1px, -1px) rotate(1deg); }
+      90% { transform: translate(1px, 2px) rotate(0deg); }
+      100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+    .cine-text { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: red; text-shadow: 0 0 10px red; }
+    .cine-blue { box-shadow: inset 0 0 50px #38bdf8; border-color: #38bdf8; color: #38bdf8; text-shadow: 0 0 10px #38bdf8; }
+
+    .options-box {
+      grid-column: span 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 10px;
+      padding-right: 20px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      overflow-y: auto;
+      max-height: 100%;
+    }
+    .light-theme .options-box { border-right-color: rgba(0,0,0,0.1); }
+
+    .choice-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: inherit;
+      padding: 10px 14px; /* 크기 추가 축소 */
+      font-size: 0.95rem; /* 크기 추가 축소 */
+      font-weight: 700;
+      font-family: inherit;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .light-theme .choice-btn { background: #fff; border-color: #cbd5e1; }
+
+    .choice-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--primary); }
+    .light-theme .choice-btn:hover { background: #f8fafc; border-color: var(--primary); }
+    
+    .choice-btn.correct { border-color: var(--success); background: rgba(74, 222, 128, 0.15); }
+    .choice-btn.wrong { border-color: var(--error); background: rgba(239, 68, 68, 0.15); animation: shake 0.4s; }
+
+    .graph-box {
+      grid-column: span 3;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      height: 100%;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      max-height: 280px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+    }
+
+    /* Custom Video Zoom (70%) */
+    .video-zoomed-container {
+      position: fixed !important;
+      top: 15vh !important;
+      left: 15vw !important;
+      width: 70vw !important;
+      height: 70vh !important;
+      z-index: 9999 !important;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      border-radius: 16px;
+      background: black;
+      transition: all 0.3s ease;
+    }
+    .overlay-bg { display: none !important; }
+
+    .light-theme canvas { background: rgba(0, 0, 0, 0.02); }
+
+    .graph-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+      pointer-events: none;
+    }
+    .light-theme .graph-overlay { color: rgba(0,0,0,0.2); }
+
+    .toast {
+      position: absolute;
+      bottom: 40px;
+      background: var(--error);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="overlay-dim" id="dim"></div>
+    
+    <!-- Main Menu -->
+    <div id="view-menu" class="glass-panel" style="justify-content: center; height: auto;">
+      <h1 style="margin-bottom: 40px;">📊 그래프로 보는 세상</h1>
+      <div class="menu-grid" id="menu-grid"></div>
+    </div>
+
+    <!-- Scenario View -->
+    <div id="view-scenario" class="glass-panel" style="display: none;">
+      <div class="header">
+        <h1 id="scenario-title" style="margin: 0; font-size: 1.8rem;"></h1>
+        <button class="btn-back" onclick="showMenu()">🔙 메인 메뉴로</button>
+      </div>
+      
+      <div class="scenario-grid">
+        <!-- Row 1: 3 Events -->
+        <div class="event-box" id="event-1"></div>
+        <div class="event-box" id="event-2"></div>
+        <div class="event-box" id="event-3"></div>
+        
+        <!-- Row 2: Choices & Graph -->
+        <div class="options-box" id="choices-container">
+          <!-- Buttons and headers injected here -->
+        </div>
+        
+        <div class="graph-box" id="graph-container">
+          <canvas id="graph-canvas" width="600" height="400"></canvas>
+          <div class="graph-overlay" id="graph-placeholder">정답을 맞히면 그래프가 그려집니다.</div>
+        </div>
+      </div>
+    </div>
+    
+    <div id="toast" class="toast">다시 한번 생각해볼까요?</div>
+  </div>
+
+  <script>
+    // Generate S4 data
+    const s4Data = [];
+    for(let t=0; t<=4; t+=0.1) {
+      let v = 22.5 * Math.pow(t - 1, 2) - 50;
+      s4Data.push({ t, v });
+    }
+
+    const scenarios = [
+      {
+        id: 1,
+        title: "🎮 게임 스트레스 지수",
+        desc: "게임을 할 때 내 스트레스는 어떻게 변할까?",
+        bg: "./assets/game_bg_1783487465116.png",
+        theme: "dark",
+        questionText: "게임 시간에 따른 스트레스 지수 그래프를 그리고자 합니다.",
+        events: [
+          { type: 'local-video', start: 23, end: 27, src: "발로란트2.mp4", label: "팀원 데스" },
+          { type: 'local-video', start: 87, end: 92, src: "발로란트2.mp4", label: "적 팀 사살" },
+          { type: 'local-video', start: 105, end: 110, src: "발로란트2.mp4", label: "패배" }
+        ],
+        xAxis: "플레이 시간", yAxis: "스트레스 지수",
+        cards: [
+          { text: "팀원이 죽을 땐 오르지만, 적을 처치하면 내려가고, 패배 시 다시 치솟을 것이다.", correct: true },
+          { text: "게임 내내 스트레스는 지속적으로 계속 오르기만 할 것이다.", correct: false },
+          { text: "적을 처치해도 스트레스는 변하지 않고, 팀원이 죽을 때만 스트레스가 오를 것이다.", correct: false }
+        ],
+        graphType: "line", yMin: 0, yMax: 100,
+        graphData: [
+          {t:0, v:20}, {t:1, v:20}, {t:1.05, v:70}, {t:1.3, v:20}, 
+          {t:2, v:20}, {t:2.05, v:5}, {t:2.3, v:20}, 
+          {t:3, v:20}, {t:3.05, v:100}, {t:3.5, v:100}
+        ]
+      },
+      {
+        id: 2,
+        title: "⚽ 월드컵 경기 소음 수준",
+        desc: "축구 경기 중 상황별로 관중석의 소음은?",
+        bg: "./assets/worldcup_bg_1783487475152.png",
+        theme: "dark",
+        questionText: "학교에서 월드컵을 다같이 보고 있습니다. 경기 상황에 따른 소음 그래프를 그리고자 합니다.",
+        events: [
+          { type: 'local-video', start: 57, end: 63, src: "월드컵.mp4", label: "체코 1골" },
+          { type: 'local-video', start: 76, end: 82, src: "월드컵.mp4", label: "대한민국 동점 골" },
+          { type: 'local-video', start: 121, end: 126, src: "월드컵.mp4", label: "대한민국 역전 골" }
+        ],
+        xAxis: "경기 시간", yAxis: "소음 (데시벨)",
+        cards: [
+          { text: "골을 먹혔을 때 가장 시끄럽고 역전골엔 조용할 것이다.", correct: false },
+          { text: "골을 먹히면 아쉬움에 약간 시끄럽고, 역전골을 넣으면 폭발적으로 시끄러워질 것이다.", correct: true },
+          { text: "경기 내내 소음이 일정하게 작아질 것이다.", correct: false }
+        ],
+        graphType: "line", yMin: 0, yMax: 100,
+        graphData: [
+          {t:0, v:30}, {t:1, v:30}, {t:1.05, v:55}, {t:1.4, v:30}, 
+          {t:2, v:30}, {t:2.05, v:85}, {t:2.4, v:45}, 
+          {t:3, v:45}, {t:3.05, v:100}, {t:3.5, v:100}
+        ]
+      },
+      {
+        id: 3,
+        title: "🔥 엽떡 맵기와 물 섭취량",
+        desc: "맵기 단계에 따라 물을 얼마나 마실까?",
+        bg: "white",
+        theme: "light",
+        questionText: "엽떡 맛 맵기에 따른 마시는 물의 양 그래프를 그리고자 합니다.",
+        events: [
+          { type: 'split-image', src1: "./assets/media__1783516946529.png", src2: "./assets/media__1783516975998.png", filter: "saturate(0.5) brightness(1.2)", label: "초보맛" },
+          { type: 'split-image', src1: "./assets/media__1783516951704.png", src2: "./assets/media__1783516975998.png", filter: "saturate(1.2)", label: "오리지널" },
+          { type: 'split-image', src1: "./assets/media__1783516956268.png", src2: "./assets/media__1783516975998.png", filter: "saturate(2.5) contrast(1.2) sepia(0.3) hue-rotate(-10deg)", label: "매운맛" }
+        ],
+        xAxis: "맵기 단계", yAxis: "물 섭취량 (잔)",
+        cards: [
+          { text: "맵기 단계와 상관없이 물을 똑같이 마실 것이다.", correct: false },
+          { text: "맵기가 올라갈수록 물 섭취량이 줄어들 것이다.", correct: false },
+          { text: "오리지널을 기점으로 물 섭취량이 기하급수적으로 폭발할 것이다.", correct: true }
+        ],
+        graphType: "scatter", yMin: 0, yMax: 12,
+        graphData: [
+          {t:1, v:0.5}, {t:2, v:4.5}, {t:3, v:11}
+        ]
+      },
+      {
+        id: 4,
+        title: "📱 쇼츠 시청과 후회도",
+        desc: "유튜브를 오래 보면 기분이 어떻게 변할까?",
+        bg: "./assets/shorts_bg_1783487493108.png",
+        theme: "dark",
+        questionText: "쇼츠를 보는 시간에 따른 후회도를 나타내고자 합니다.",
+        events: [
+          { type: 'image', src: "./assets/shorts_10m_1783519835917.png", label: "시청 10분째" },
+          { type: 'image', src: "./assets/shorts_1h_1783519846916.png", label: "시청 1시간" },
+          { type: 'image', src: "./assets/shorts_3h_1783519857749.png", label: "시청 3시간 이상" }
+        ],
+        xAxis: "시청 시간", yAxis: "후회도 (0 이하는 만족)",
+        cards: [
+          { text: "시청 시간이 길어질수록 계속 만족도가 높아질 것이다.", correct: false },
+          { text: "처음엔 재밌지만, 일정 시간을 넘기면 후회도가 급격히 상승할 것이다.", correct: true },
+          { text: "처음부터 끝까지 후회도만 계속 증가할 것이다.", correct: false }
+        ],
+        graphType: "curve", yMin: -60, yMax: 100,
+        graphData: s4Data
+      }
+    ];
+
+    const app = document.getElementById('app');
+    const dim = document.getElementById('dim');
+    const menuGrid = document.getElementById('menu-grid');
+    const viewMenu = document.getElementById('view-menu');
+    const viewScenario = document.getElementById('view-scenario');
+    let currentScenario = null;
+    let animId = null;
+
+    // Init Menu
+    scenarios.forEach(sc => {
+      const card = document.createElement('div');
+      card.className = 'menu-card';
+      card.innerHTML = `<h3>${sc.title}</h3><p>${sc.desc}</p>`;
+      card.onclick = () => openScenario(sc);
+      menuGrid.appendChild(card);
+    });
+
+    function showMenu() {
+      if(animId) cancelAnimationFrame(animId);
+      viewScenario.style.display = 'none';
+      viewMenu.style.display = 'flex';
+      app.style.backgroundImage = 'none';
+      app.style.backgroundColor = '#0f172a';
+      dim.style.display = 'block';
+      viewScenario.classList.remove('light-theme');
+    }
+
+    function openScenario(sc) {
+      currentScenario = sc;
+      if (sc.bg === 'white') {
+        app.style.backgroundImage = 'none';
+        app.style.backgroundColor = '#ffffff';
+        dim.style.display = 'none';
+        viewScenario.classList.add('light-theme');
+      } else {
+        app.style.backgroundImage = `url('${sc.bg}')`;
+        dim.style.display = 'block';
+        viewScenario.classList.remove('light-theme');
+      }
+      
+      viewMenu.style.display = 'none';
+      viewScenario.style.display = 'flex';
+      
+      document.getElementById('scenario-title').innerText = sc.title;
+      
+      // Setup Events
+      for(let i=1; i<=3; i++) {
+        const box = document.getElementById(`event-${i}`);
+        box.innerHTML = '';
+        box.className = 'event-box';
+        const ev = sc.events[i-1];
+        
+        if (ev.type === 'youtube') {
+          box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${ev.vid || 'Bj1CFtGUOvc'}?start=${ev.start}&end=${ev.end}&autoplay=1&mute=1&controls=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        } else if (ev.type === 'local-video') {
+          box.innerHTML = `
+            <div style="width: 100%; text-align: left; padding: 10px 15px; background: rgba(0,0,0,0.6); color: white; font-weight: 700; font-size: 1.05rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              상황${i}. ${ev.label}
+            </div>
+            <div class="vid-container" style="position: relative; width: 100%; flex-grow: 1; overflow: hidden; background: transparent; transition: all 0.3s ease;">
+              <video id="vid-${i}" src="${ev.src}" 
+                     style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" 
+                     muted playsinline>
+              </video>
+              <div id="play-btn-${i}" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: rgba(255,255,255,0.85); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: none; z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#000" style="margin-left: 4px;"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+          `;
+          
+          const vid = box.querySelector(`#vid-${i}`);
+          const btn = box.querySelector(`#play-btn-${i}`);
+          const container = box.querySelector('.vid-container');
+          
+          const startTime = ev.start;
+          const endTime = ev.end;
+
+          // 초기 위치 지정
+          vid.addEventListener('loadedmetadata', () => {
+             vid.currentTime = startTime;
+          });
+
+          // 지정된 시간까지만 재생 후 멈춤 + 초기 위치로 복귀
+          vid.addEventListener('timeupdate', () => {
+            if (vid.currentTime >= endTime) {
+              vid.pause();
+              vid.currentTime = startTime;
+              btn.style.display = 'flex';
+              container.classList.remove('video-zoomed-container');
+            }
+          });
+
+          vid.addEventListener('click', () => {
+            if (vid.paused) {
+              vid.currentTime = startTime; // 항상 처음 위치에서 시작
+              vid.play();
+              btn.style.display = 'none';
+              container.classList.add('video-zoomed-container');
+            } else {
+              vid.pause();
+              vid.currentTime = startTime; // 중간에 꺼도 처음 위치로 돌아가기
+              btn.style.display = 'flex';
+              container.classList.remove('video-zoomed-container');
+            }
+          });
+
+        } else if (ev.type === 'image') {
+          box.innerHTML = `
+            <div style="display: flex; flex-direction: column; width: 100%; height: 100%; background: #000;">
+              <img src="${ev.src}" style="width: 100%; flex-grow: 1; min-height: 0; object-fit: contain;">
+              <div style="padding: 12px; background: rgba(255,255,255,0.1); color: white; text-align: center; font-weight: bold; font-size: 1.1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                ${ev.label}
+              </div>
+            </div>
+          `;
+        } else if (ev.type === 'split-image') {
+          box.innerHTML = `
+            <div style="display: flex; flex-direction: column; width: 100%; height: 100%; background: white;">
+              <div style="flex: 1; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; padding: 5px; height: 40%; overflow: hidden;">
+                <img src="${ev.src1}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1.5; display: flex; justify-content: center; align-items: center; padding: 5px; height: 60%; overflow: hidden;">
+                <img src="${ev.src2}" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: ${ev.filter}; transition: filter 0.5s;">
+              </div>
+            </div>`;
+        } else if (ev.type === 'cine') {
+          box.classList.add('cinematic-box');
+          box.classList.add(...(ev.class || '').split(' '));
+          box.innerHTML = `<div class="event-text">${ev.text}</div>`;
+        } else {
+          box.innerHTML = `<div class="event-text">${ev.text}</div>`;
+        }
+      }
+
+      // Setup Choices
+      const cc = document.getElementById('choices-container');
+      cc.innerHTML = '';
+      
+      const isLight = sc.theme === 'light';
+      const pColor = isLight ? '#475569' : '#cbd5e1';
+      const hColor = isLight ? '#0284c7' : '#38bdf8';
+
+      const headerDiv = document.createElement('div');
+      headerDiv.style.marginBottom = '8px';
+      if (sc.questionText) {
+        headerDiv.innerHTML = `
+          <p style="font-size: 0.95rem; line-height: 1.4; color: ${pColor}; margin-bottom: 4px; font-weight: 500;">
+            ${sc.questionText}
+          </p>
+          <h4 style="font-size: 1.05rem; color: ${hColor}; margin-bottom: 4px;">어떤 그래프가 그려질까요?</h4>
+        `;
+      } else {
+        headerDiv.innerHTML = `<h4 style="font-size: 1.05rem; color: ${hColor}; margin-bottom: 4px;">어떤 그래프가 그려질까요?</h4>`;
+      }
+      cc.appendChild(headerDiv);
+      
+      sc.cards.forEach(card => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.innerText = card.text;
+        btn.onclick = () => handleChoice(btn, card.correct);
+        cc.appendChild(btn);
+      });
+
+      // Reset Graph
+      const canvas = document.getElementById('graph-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('graph-placeholder').style.display = 'flex';
+    }
+
+    function handleChoice(btn, isCorrect) {
+      if (isCorrect) {
+        btn.classList.add('correct');
+        startGraphAnimation();
+      } else {
+        btn.classList.add('wrong');
+        showToast();
+        setTimeout(() => btn.classList.remove('wrong'), 400);
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.style.opacity = 1;
+      setTimeout(() => toast.style.opacity = 0, 2000);
+    }
+
+    function startGraphAnimation() {
+      document.getElementById('graph-placeholder').style.display = 'none';
+      
+      let progress = 0;
+      const canvas = document.getElementById('graph-canvas');
+      const ctx = canvas.getContext('2d');
+      const sc = currentScenario;
+      
+      function draw() {
+        progress += 0.015;
+        if (progress > 1) progress = 1;
+        
+        drawGraph(ctx, canvas, sc, progress);
+        
+        if (progress < 1) {
+          animId = requestAnimationFrame(draw);
+        }
+      }
+      if(animId) cancelAnimationFrame(animId);
+      animId = requestAnimationFrame(draw);
+    }
+
+    function drawGraph(ctx, canvas, sc, progress) {
+      const w = canvas.width, h = canvas.height, p = 60, pBottom = 70;
+      ctx.clearRect(0, 0, w, h);
+      
+      const isLight = sc.theme === 'light';
+      const textColor = isLight ? '#334155' : '#cbd5e1';
+      const axisColor = isLight ? '#94a3b8' : 'rgba(255, 255, 255, 0.8)';
+      const lineColor = isLight ? '#2563eb' : '#38bdf8';
+
+      const data = sc.graphData;
+      let xMin = 0, xMax = sc.id === 3 ? 4 : data[data.length-1].t;
+      let yMin = sc.yMin, yMax = sc.yMax;
+      
+      const getX = (t) => p + (t - xMin) / (xMax - xMin) * (w - p * 2);
+      const getY = (v) => h - pBottom - (v - yMin) / (yMax - yMin) * (h - pBottom - p/2);
+      
+      // Axes
+      ctx.strokeStyle = axisColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      // Y-axis
+      ctx.moveTo(p, p/2); ctx.lineTo(p, h-pBottom + 10);
+      // X-axis
+      const xAxisY = getY(0);
+      ctx.moveTo(p - 10, xAxisY); ctx.lineTo(w-p/2, xAxisY);
+      ctx.stroke();
+      
+      // Labels
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.font = '700 14px Noto Sans KR';
+      ctx.fillText(sc.xAxis, w/2, h - 10); // X-axis main label
+
+      // Y-axis label (2 lines)
+      ctx.textAlign = 'left';
+      ctx.font = '700 13px Noto Sans KR';
+      let yLabel = sc.yAxis;
+      if (yLabel === "스트레스 지수") {
+        ctx.fillText("스트레스", 5, 20);
+        ctx.fillText("지수", 5, 35);
+      } else if (yLabel.includes("(")) {
+        let parts = yLabel.split("(");
+        ctx.fillText(parts[0].trim(), 5, 20);
+        ctx.fillText("(" + parts[1], 5, 35);
+      } else {
+        ctx.fillText(yLabel, 5, 25);
+      }
+      
+      // Zero line for scenario 4
+      if(yMin < 0) {
+        ctx.fillStyle = axisColor;
+        ctx.fillText("0", p - 15, xAxisY + 4);
+      }
+
+      // X-axis specific moment labels
+      ctx.font = '600 12px Noto Sans KR';
+      if (sc.id === 1 || sc.id === 2) { // Game & World Cup (Spike labels)
+        const spikeTimes = sc.id === 1 ? [1.05, 2.05, 3.05] : [1.05, 2.05, 3.05]; // Approximate spike t values
+        spikeTimes.forEach((t, i) => {
+          if (progress * xMax >= t) {
+            const x = getX(t);
+            // tick
+            ctx.beginPath(); ctx.moveTo(x, xAxisY); ctx.lineTo(x, xAxisY + 5); ctx.stroke();
+            // text
+            ctx.fillStyle = textColor;
+            ctx.fillText(sc.events[i].label, x, xAxisY + 20);
+          }
+        });
+      } else if (sc.id === 3) { // Yeoptteok (1,2,3)
+        const labels = ["초보맛", "오리지널", "매운맛"];
+        for(let i=1; i<=3; i++) {
+          if (progress * xMax >= i) {
+            const x = getX(i);
+            ctx.beginPath(); ctx.moveTo(x, xAxisY); ctx.lineTo(x, xAxisY + 5); ctx.stroke();
+            ctx.fillStyle = textColor;
+            ctx.fillText(labels[i-1], x, xAxisY + 20);
+          }
+        }
+      }
+
+      // Draw Data
+      const total = data.length;
+      const curIdx = Math.floor(progress * (total - 1));
+      const subProg = (progress * (total - 1)) % 1;
+      
+      ctx.strokeStyle = lineColor;
+      ctx.fillStyle = lineColor;
+      ctx.lineWidth = 4;
+      ctx.lineJoin = 'round';
+      
+      if (sc.graphType === 'scatter') {
+        for (let i = 0; i <= curIdx; i++) {
+          let alpha = (i === curIdx && progress < 1) ? subProg : 1;
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(getX(data[i].t), getY(data[i].v), 8, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      } else { // line or curve
+        ctx.beginPath();
+        for (let i = 0; i <= curIdx; i++) {
+          const x = getX(data[i].t), y = getY(data[i].v);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        if (curIdx < total - 1) {
+          const p1 = data[curIdx], p2 = data[curIdx+1];
+          const curX = getX(p1.t) + (getX(p2.t) - getX(p1.t)) * subProg;
+          const curY = getY(p1.v) + (getY(p2.v) - getY(p1.v)) * subProg;
+          ctx.lineTo(curX, curY);
+        }
+        ctx.stroke();
+      }
+    }
+  </script>
+</body>
+</html>
