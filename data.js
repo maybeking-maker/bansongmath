@@ -18,7 +18,8 @@ const mathData = {
     { title: "3.3용어미로찾기", file: "materials/unit3/3.3용어미로찾기.html" }
   ],
   "4단원 좌표평면과 그래프": [
-    { title: "4.1데카르트의 파리", file: "materials/unit4/4.1데카르트의 파리.html" }
+    { title: "4.1데카르트의 파리", file: "materials/unit4/4.1데카르트의 파리.html" },
+    { title: "4.2현실 속 그래프", file: "materials/unit4/4.2현실 속 그래프.html" }
   ],
   "5단원 기본 도형과 작도": [
     // 여기에 자료 추가
