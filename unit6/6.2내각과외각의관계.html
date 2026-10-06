@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>삼각형의 내각과 외각의 관계</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 15px;
+      color: #334155;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-weight: 900;
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .btn:hover:not(:disabled) { background: #e2e8f0; }
+    .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+    
+    .btn.action-btn { background: #3b82f6; color: white; }
+    .btn.action-btn:hover:not(:disabled) { background: #2563eb; }
+    .btn.action-btn:disabled { background: #94a3b8; color: #f1f5f9; }
+    
+    .btn.reset-btn { background: #fecaca; color: #b91c1c; }
+    .btn.reset-btn:hover { background: #fca5a5; }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    /* 위로 뜬 콤팩트한 정보 패널 (고정 높이) */
+    .info-panel {
+      width: 100%;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 15px 20px;
+      text-align: center;
+      box-sizing: border-box;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .info-panel p {
+      margin: 5px 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    
+    .formula {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #1e293b;
+      margin: 0;
+      animation: fadeIn 0.4s ease;
+    }
+    .t-a { color: #ef4444; font-weight: 900; }
+    .t-b { color: #3b82f6; font-weight: 900; }
+    .t-c { color: #f59e0b; font-weight: 900; }
+    
+    .svg-wrapper {
+      width: 100%;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 15px;
+      border: 2px dashed #cbd5e1;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      max-width: 650px;
+      height: 300px;
+      overflow: visible;
+    }
+    
+    .piece { transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .shape-fill { transition: fill 0.6s ease; }
+    .shape-stroke { transition: stroke 0.6s ease; }
+    .piece text { transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    
+    #original-outline, #solid-outline { transition: opacity 0.4s ease; }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>내각과 외각의 관계 🧩</h1>
+    <div class="subtitle">삼각형의 한 외각의 크기는 그와 이웃하지 않는 두 내각의 크기의 합과 같습니다.</div>
+    
+    <div class="controls">
+      <button class="btn" onclick="randomTriangle()">🎲 새로운 삼각형</button>
+      <button class="btn action-btn" id="btn-cut" onclick="setState(1)">✂️ 조각내기</button>
+      <button class="btn action-btn" id="btn-move" onclick="setState(2)">🧩 외각에 맞춰보기</button>
+      <button class="btn reset-btn" onclick="setState(0)">🔄 처음으로</button>
+    </div>
+
+    <div class="main-area">
+      <!-- 컴팩트한 상단 정보 패널 (고정 높이) -->
+      <div class="info-panel" id="info-panel">
+        <!-- JS가 내용을 채웁니다 -->
+      </div>
+
+      <div class="svg-wrapper">
+        <svg viewBox="-380 -100 680 300" id="canvas">
+          <line id="base-line" x1="-350" y1="150" x2="250" y2="150" stroke="#94a3b8" stroke-width="3" stroke-dasharray="8 8" />
+          <polygon id="original-outline" points="" fill="transparent" stroke="#94a3b8" stroke-width="3" stroke-dasharray="8 8" opacity="0" stroke-linejoin="round" />
+          <g id="ext-arc-group"></g>
+
+          <g id="piece-A" class="piece">
+            <path id="path-A-fill" class="shape-fill" fill="transparent" stroke="none" />
+            <g id="arc-A"></g>
+            <g id="label-A"></g>
+            <path id="path-A-stroke" class="shape-stroke" fill="none" stroke="transparent" stroke-width="3" stroke-linejoin="round" />
+          </g>
+          <g id="piece-B" class="piece">
+            <path id="path-B-fill" class="shape-fill" fill="transparent" stroke="none" />
+            <g id="arc-B"></g>
+            <g id="label-B"></g>
+            <path id="path-B-stroke" class="shape-stroke" fill="none" stroke="transparent" stroke-width="3" stroke-linejoin="round" />
+          </g>
+          <g id="piece-C" class="piece">
+            <path id="path-C-fill" class="shape-fill" fill="transparent" stroke="none" />
+            <g id="arc-C"></g>
+            <g id="label-C"></g>
+            <path id="path-C-stroke" class="shape-stroke" fill="none" stroke="transparent" stroke-width="3" stroke-linejoin="round" />
+          </g>
+          
+          <polygon id="solid-outline" points="" fill="transparent" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let A, B, C;
+    let currentState = 0; 
+    let centroidA, centroidB, centroidC, M;
+
+    // 약간 키를 높여 정상적인 비율로 조정한 삼각형들
+    const triangles = [
+      { x: -60, y: -50 },    // 예각 1
+      { x: 20, y: -80 },     // 예각 2
+      { x: -200, y: -50 },   // 직각 (B에서)
+      { x: -100, y: -50 },   // 직각 (A에서)
+      { x: -100, y: 50 },    // 둔각 (A에서)
+      { x: -300, y: 50 },    // 둔각 (B에서)
+      { x: -100, y: -80 }    // 이등변
+    ];
+
+    function randomTriangle() {
+      const type = Math.floor(Math.random() * triangles.length);
+      A = triangles[type];
+      B = { x: -200, y: 150 };
+      C = { x: 0, y: 150 };
+      
+      generatePuzzle();
+      setState(0);
+    }
+
+    function makeJaggedPath(p1, p2, segments = 5, jitter = 12) {
+      const pts = [p1];
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.hypot(dx, dy);
+      const nx = -dy / len;
+      const ny = dx / len;
+      
+      for (let i = 1; i < segments; i++) {
+        const t = i / segments;
+        const base = { x: p1.x + dx * t, y: p1.y + dy * t };
+        const offset = (Math.random() - 0.5) * jitter * 2;
+        pts.push({ x: base.x + nx * offset, y: base.y + ny * offset });
+      }
+      pts.push(p2);
+      return pts;
+    }
+
+    function getInteriorArc(v, p1, p2, radius) {
+      let a1 = Math.atan2(p1.y - v.y, p1.x - v.x);
+      let a2 = Math.atan2(p2.y - v.y, p2.x - v.x);
+      let diff = a2 - a1;
+      while (diff <= -Math.PI) diff += 2 * Math.PI;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      if (diff < 0) {
+        let temp = a1; a1 = a2; a2 = temp;
+        diff = -diff;
+      }
+      const startX = v.x + radius * Math.cos(a1);
+      const startY = v.y + radius * Math.sin(a1);
+      const endX = v.x + radius * Math.cos(a2);
+      const endY = v.y + radius * Math.sin(a2);
+      // 추가: stroke-width 지정
+      return `<path d="M ${v.x} ${v.y} L ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY} Z" class="arc-path" fill="transparent" stroke="none" stroke-width="2" />`;
+    }
+    
+    function getAngleLabel(v, p1, p2, radius, label) {
+      let a1 = Math.atan2(p1.y - v.y, p1.x - v.x);
+      let a2 = Math.atan2(p2.y - v.y, p2.x - v.x);
+      let diff = a2 - a1;
+      while (diff <= -Math.PI) diff += 2 * Math.PI;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      if (diff < 0) { diff = -diff; a1 = a2; }
+      
+      let midAngle = a1 + diff / 2;
+      let pushDist = radius + 15;
+      if (diff < Math.PI / 4) pushDist += 10;
+      
+      const tx = v.x + pushDist * Math.cos(midAngle);
+      const ty = v.y + pushDist * Math.sin(midAngle);
+      
+      // ∠ 표시 제거, 소문자 알파벳만
+      return `<text id="label-${label}" x="${tx}" y="${ty + 4}" font-size="16" font-weight="900" fill="#1e293b" text-anchor="middle" transform-origin="${tx}px ${ty + 4}px">${label}</text>`;
+    }
+    
+    function getExteriorArc(v, p1, p2, radius) {
+      let a1 = Math.atan2(p1.y - v.y, p1.x - v.x);
+      let a2 = Math.atan2(p2.y - v.y, p2.x - v.x);
+      let diff = a2 - a1;
+      while (diff <= -Math.PI) diff += 2 * Math.PI;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      if (diff < 0) {
+        let temp = a1; a1 = a2; a2 = temp;
+        diff = -diff;
+      }
+      const startX = v.x + radius * Math.cos(a1);
+      const startY = v.y + radius * Math.sin(a1);
+      const endX = v.x + radius * Math.cos(a2);
+      const endY = v.y + radius * Math.sin(a2);
+      return `<path d="M ${v.x} ${v.y} L ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY} Z" fill="#fef08a" opacity="0.6" stroke="#eab308" stroke-width="2" stroke-dasharray="4 4" />`;
+    }
+
+    function getCentroid(pts) {
+      let sumX = 0, sumY = 0;
+      pts.forEach(p => { sumX += p.x; sumY += p.y; });
+      return { x: sumX / pts.length, y: sumY / pts.length };
+    }
+
+    function ptsToPath(pts) {
+      return "M " + pts[0].x + " " + pts[0].y + " " + pts.slice(1).map(p => "L " + p.x + " " + p.y).join(" ") + " Z";
+    }
+
+    function generatePuzzle() {
+      const a = Math.hypot(B.x - C.x, B.y - C.y);
+      const b = Math.hypot(A.x - C.x, A.y - C.y);
+      const c = Math.hypot(A.x - B.x, A.y - B.y);
+      const P = a + b + c;
+      M = {
+        x: (a * A.x + b * B.x + c * C.x) / P,
+        y: (a * A.y + b * B.y + c * C.y) / P
+      };
+
+      const D = { x: (A.x + B.x)/2, y: (A.y + B.y)/2 };
+      const E = { x: (B.x + C.x)/2, y: (B.y + C.y)/2 };
+      const F = { x: (C.x + A.x)/2, y: (C.y + A.y)/2 };
+
+      const ptsAB = makeJaggedPath(D, M);
+      const ptsBC = makeJaggedPath(E, M);
+      const ptsCA = makeJaggedPath(F, M);
+
+      const pieceA_pts = [A, ...ptsAB, ...ptsCA.slice().reverse().slice(1)];
+      const pieceB_pts = [B, ...ptsBC, ...ptsAB.slice().reverse().slice(1)];
+      const pieceC_pts = [C, ...ptsCA, ...ptsBC.slice().reverse().slice(1)];
+
+      centroidA = getCentroid(pieceA_pts);
+      centroidB = getCentroid(pieceB_pts);
+      centroidC = getCentroid(pieceC_pts);
+
+      document.getElementById('solid-outline').setAttribute('points', `${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`);
+      document.getElementById('original-outline').setAttribute('points', `${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`);
+
+      document.getElementById('path-A-fill').setAttribute('d', ptsToPath(pieceA_pts));
+      document.getElementById('path-A-stroke').setAttribute('d', ptsToPath(pieceA_pts));
+      document.getElementById('path-B-fill').setAttribute('d', ptsToPath(pieceB_pts));
+      document.getElementById('path-B-stroke').setAttribute('d', ptsToPath(pieceB_pts));
+      document.getElementById('path-C-fill').setAttribute('d', ptsToPath(pieceC_pts));
+      document.getElementById('path-C-stroke').setAttribute('d', ptsToPath(pieceC_pts));
+
+      document.getElementById('arc-A').innerHTML = getInteriorArc(A, B, C, 25);
+      document.getElementById('label-A').innerHTML = getAngleLabel(A, B, C, 25, "a");
+      
+      document.getElementById('arc-B').innerHTML = getInteriorArc(B, C, A, 25);
+      document.getElementById('label-B').innerHTML = getAngleLabel(B, C, A, 25, "b");
+      
+      document.getElementById('arc-C').innerHTML = getInteriorArc(C, A, B, 25);
+      document.getElementById('label-C').innerHTML = getAngleLabel(C, A, B, 25, "c");
+      
+      document.getElementById('ext-arc-group').innerHTML = getExteriorArc(C, A, {x: 250, y: C.y}, 40);
+
+      document.getElementById('piece-A').style.transformOrigin = `${A.x}px ${A.y}px`;
+      document.getElementById('piece-B').style.transformOrigin = `${B.x}px ${B.y}px`;
+      document.getElementById('piece-C').style.transformOrigin = `${C.x}px ${C.y}px`;
+    }
+    
+    function setPieceColors(id, fill, stroke, arcFill, arcStroke) {
+      document.getElementById(`path-${id}-fill`).setAttribute('fill', fill);
+      document.getElementById(`path-${id}-stroke`).setAttribute('stroke', stroke);
+      const arcPath = document.querySelector(`#arc-${id} .arc-path`);
+      if (arcPath) {
+        arcPath.setAttribute('fill', arcFill);
+        arcPath.setAttribute('stroke', arcStroke);
+      }
+    }
+
+    function setState(state) {
+      currentState = state;
+      const pieceA = document.getElementById('piece-A');
+      const pieceB = document.getElementById('piece-B');
+      const pieceC = document.getElementById('piece-C');
+      const labelA = document.getElementById('label-a');
+      
+      const btnCut = document.getElementById('btn-cut');
+      const btnMove = document.getElementById('btn-move');
+
+      if (state === 0) {
+        btnCut.disabled = false;
+        btnMove.disabled = true;
+
+        document.getElementById('solid-outline').style.opacity = 1;
+        document.getElementById('original-outline').style.opacity = 0;
+        
+        // 투명 상태일 때 부채꼴의 선(회색)만 보이도록 설정
+        setPieceColors('A', 'transparent', 'transparent', 'transparent', '#94a3b8');
+        setPieceColors('B', 'transparent', 'transparent', 'transparent', '#94a3b8');
+        setPieceColors('C', 'transparent', 'transparent', 'transparent', '#94a3b8');
+
+        pieceA.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        pieceB.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        pieceC.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        if(labelA) labelA.style.transform = `rotate(0deg)`;
+        
+        document.getElementById('info-panel').innerHTML = `
+          <p>삼각형의 세 내각 <span class="t-a">∠a</span>, <span class="t-b">∠b</span>, <span class="t-c">∠c</span> 가 있습니다.</p>
+        `;
+      } else if (state === 1) {
+        btnCut.disabled = true;
+        btnMove.disabled = false;
+
+        document.getElementById('solid-outline').style.opacity = 0;
+        document.getElementById('original-outline').style.opacity = 0;
+        
+        // 조각낼 때 색을 채우고 테두리 선은 투명하게 설정
+        setPieceColors('A', '#fecaca', '#ef4444', '#f87171', 'transparent');
+        setPieceColors('B', '#bfdbfe', '#3b82f6', '#60a5fa', 'transparent');
+        setPieceColors('C', '#bbf7d0', '#22c55e', '#4ade80', 'transparent');
+
+        const exA = (centroidA.x - M.x) * 0.12;
+        const eyA = (centroidA.y - M.y) * 0.12;
+        const exB = (centroidB.x - M.x) * 0.12;
+        const eyB = (centroidB.y - M.y) * 0.12;
+        const exC = (centroidC.x - M.x) * 0.12;
+        const eyC = (centroidC.y - M.y) * 0.12;
+        
+        pieceA.style.transform = `translate(${exA}px, ${eyA}px) rotate(0deg)`;
+        pieceB.style.transform = `translate(${exB}px, ${eyB}px) rotate(0deg)`;
+        pieceC.style.transform = `translate(${exC}px, ${eyC}px) rotate(0deg)`;
+        if(labelA) labelA.style.transform = `rotate(0deg)`;
+        
+        document.getElementById('info-panel').innerHTML = `
+          <p>조각이 예쁘게 분리되었습니다! 이제 외각 자리로 옮겨볼까요?</p>
+        `;
+      } else if (state === 2) {
+        btnCut.disabled = true;
+        btnMove.disabled = true;
+
+        document.getElementById('solid-outline').style.opacity = 0;
+        document.getElementById('original-outline').style.opacity = 1; 
+        
+        pieceA.style.transform = `translate(${C.x - A.x}px, ${C.y - A.y}px) rotate(180deg)`;
+        pieceB.style.transform = `translate(${C.x - B.x}px, ${C.y - B.y}px) rotate(0deg)`;
+        pieceC.style.transform = `translate(0px, 0px) rotate(0deg)`;
+        
+        if(labelA) labelA.style.transform = `rotate(-180deg)`;
+        
+        document.getElementById('info-panel').innerHTML = `
+          <div class="formula">
+            (<span class="t-c">∠c</span>의 외각의 크기) = <span class="t-a">∠a</span> + <span class="t-b">∠b</span>
+          </div>
+        `;
+      }
+    }
+
+    randomTriangle();
+  </script>
+</body>
+</html>

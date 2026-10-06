@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다각형 외각의 크기의 합</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 10px;
+      color: #334155;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-weight: 900;
+      font-size: 1.5rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+    }
+    .polygon-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .poly-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 1rem;
+    }
+    .poly-btn.active {
+      background: #3b82f6;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    }
+    .poly-btn:hover:not(.active) {
+      background: #e2e8f0;
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-area {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
+    .svg-wrapper {
+      flex: 1.2;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #ffffff; /* 화이트톤 배경 */
+      border-radius: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      border: 2px dashed #e2e8f0;
+    }
+
+    svg {
+      width: 100%;
+      max-width: 450px; /* 더 커지게 */
+      height: 400px;
+      overflow: visible;
+    }
+
+    .info-panel {
+      flex: 1;
+      width: 100%;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 250px;
+    }
+    
+    .btn-action {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin-top: 15px;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+    }
+    .btn-action:hover {
+      background: #2563eb;
+    }
+    .btn-action:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .formula-box {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      margin-top: 15px;
+      text-align: center;
+      border: 2px solid #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>다각형의 외각의 크기의 합 🔄</h1>
+    <div class="subtitle">외각을 모두 합치면 몇 도가 될까요? 화살표를 따라가며 확인해봐요!</div>
+    
+    <div class="polygon-selector" id="polygon-selector">
+      <button class="poly-btn" data-n="3">삼각형</button>
+      <button class="poly-btn active" data-n="4">사각형</button>
+      <button class="poly-btn" data-n="5">오각형</button>
+      <button class="poly-btn" data-n="6">육각형</button>
+      <button class="poly-btn" data-n="7">칠각형</button>
+      <button class="poly-btn" data-n="8">팔각형</button>
+      <button class="poly-btn" data-n="9">구각형</button>
+    </div>
+
+    <div class="main-area">
+      <div class="svg-wrapper">
+        <!-- viewBox를 키워서 다각형 크기를 상대적으로 확장 -->
+        <svg viewBox="-220 -220 440 440" id="poly-canvas">
+          <!-- 연장선들 (점선 잔상) -->
+          <g id="poly-extensions"></g>
+          <!-- 다각형 본체 -->
+          <g id="poly-edges"></g>
+          <!-- 꼭짓점들 -->
+          <g id="vertices-group"></g>
+          <!-- 외각 호 -->
+          <g id="ext-arcs"></g>
+          <!-- 외각 텍스트 -->
+          <g id="ext-texts"></g>
+          
+          <!-- 중앙 원형 궤도 (희미하게) -->
+          <circle cx="0" cy="0" r="55" fill="none" stroke="#e2e8f0" stroke-width="2" />
+          <!-- 중앙 원호 -->
+          <g id="center-arcs"></g>
+          
+          <!-- 돌아다니는 화살표 (외곽) -->
+          <g id="perimeter-arrow" style="display:none;">
+            <line x1="0" y1="0" x2="60" y2="0" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+            <polygon points="60,-7 72,0 60,7" fill="#1e293b" />
+          </g>
+          
+          <!-- 돌아다니는 화살표 (중앙) -->
+          <g id="center-arrow" style="display:none;">
+            <line x1="0" y1="0" x2="40" y2="0" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+            <polygon points="40,-7 52,0 40,7" fill="#1e293b" />
+            <circle cx="0" cy="0" r="5" fill="#1e293b" />
+          </g>
+        </svg>
+      </div>
+      
+      <div class="info-panel" id="info-panel">
+        <!-- JS가 내용을 채웁니다 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const extColors = ['#f472b6', '#3b82f6', '#2dd4bf', '#facc15', '#fb923c', '#a855f7', '#4ade80', '#ef4444', '#6366f1'];
+    const koNames = {3: "삼각형", 4: "사각형", 5: "오각형", 6: "육각형", 7: "칠각형", 8: "팔각형", 9: "구각형"};
+    
+    let currentN = 4;
+    let vertices = [];
+    let edgeAngles = [];
+    
+    let isAnimating = false;
+    let animReq = null;
+
+    const polyEdges = document.getElementById('poly-edges');
+    const polyExts = document.getElementById('poly-extensions');
+    const extArcs = document.getElementById('ext-arcs');
+    const extTexts = document.getElementById('ext-texts');
+    const centerArcs = document.getElementById('center-arcs');
+    const verticesGroup = document.getElementById('vertices-group');
+    const perimeterArrow = document.getElementById('perimeter-arrow');
+    const centerArrow = document.getElementById('center-arrow');
+    const infoPanel = document.getElementById('info-panel');
+
+    document.querySelectorAll('.poly-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (isAnimating) return;
+        document.querySelectorAll('.poly-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentN = parseInt(e.target.dataset.n);
+        drawPolygon();
+      });
+    });
+
+    function getArcPath(cx, cy, r, startAngle, sweepAngle) {
+      const endAngle = startAngle + sweepAngle;
+      const startX = cx + r * Math.cos(startAngle);
+      const startY = cy + r * Math.sin(startAngle);
+      const endX = cx + r * Math.cos(endAngle);
+      const endY = cy + r * Math.sin(endAngle);
+      const largeArcFlag = sweepAngle > Math.PI ? 1 : 0;
+      return `M ${startX} ${startY} A ${r} ${r} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
+    }
+
+    // 쫀득한 이징 함수 (EaseInOutCubic)
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function drawPolygon() {
+      if (animReq) cancelAnimationFrame(animReq);
+      isAnimating = false;
+      perimeterArrow.style.display = 'none';
+      centerArrow.style.display = 'none';
+      polyEdges.innerHTML = '';
+      polyExts.innerHTML = '';
+      extArcs.innerHTML = '';
+      extTexts.innerHTML = '';
+      centerArcs.innerHTML = '';
+      verticesGroup.innerHTML = '';
+
+      vertices = [];
+      edgeAngles = [];
+
+      const radius = 150; // 더 크게
+      for (let i = 0; i < currentN; i++) {
+        const angle = -Math.PI / 2 + i * (2 * Math.PI / currentN);
+        vertices.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
+      }
+
+      for (let i = 0; i < currentN; i++) {
+        const p1 = vertices[i];
+        const p2 = vertices[(i + 1) % currentN];
+        let ang = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        if (i > 0) {
+          while (ang < edgeAngles[i - 1]) ang += 2 * Math.PI;
+        }
+        edgeAngles.push(ang);
+      }
+      edgeAngles.push(edgeAngles[currentN - 1] + (2 * Math.PI / currentN));
+
+      for (let i = 0; i < currentN; i++) {
+        const p1 = vertices[i];
+        const p2 = vertices[(i + 1) % currentN];
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute('x1', p1.x);
+        line.setAttribute('y1', p1.y);
+        line.setAttribute('x2', p2.x);
+        line.setAttribute('y2', p2.y);
+        line.setAttribute('stroke', '#94a3b8'); 
+        line.setAttribute('stroke-width', '4');
+        line.setAttribute('stroke-linecap', 'round');
+        polyEdges.appendChild(line);
+      }
+
+      for (let i = 0; i < currentN; i++) {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute('cx', vertices[i].x);
+        circle.setAttribute('cy', vertices[i].y);
+        circle.setAttribute('r', '6');
+        circle.setAttribute('fill', '#3b82f6');
+        verticesGroup.appendChild(circle);
+      }
+
+      updateUIState('ready');
+    }
+
+    function updateUIState(state) {
+      if (state === 'ready') {
+        infoPanel.innerHTML = `
+          <h3 style="margin-top:0; color:#1e293b; font-size: 1.2rem;">외각 더해보기</h3>
+          <div style="flex: 1; background: white; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+            <span style="font-size: 0.9rem; color: #64748b; display: block; margin-bottom: 5px; font-weight:bold;">현재 다각형</span>
+            <span style="font-size: 1.3rem; font-weight: 900; color: #1e293b;">${koNames[currentN]}</span>
+          </div>
+          <p style="color: #475569; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px;">
+            화살표가 다각형의 둘레를 한 바퀴 돌면서 모든 외각을 그립니다.<br>외각들이 가운데 원에서 어떻게 모이는지 확인해보세요!
+          </p>
+          <button class="btn-action" onclick="startAnimation()">애니메이션 시작 🚀</button>
+        `;
+      } else if (state === 'animating') {
+        infoPanel.innerHTML = `
+          <h3 style="margin-top:0; color:#1e293b; font-size: 1.2rem;">외각 더해보기</h3>
+          <div style="flex: 1; background: white; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+            <span style="font-size: 0.9rem; color: #64748b; display: block; margin-bottom: 5px; font-weight:bold;">현재 다각형</span>
+            <span style="font-size: 1.3rem; font-weight: 900; color: #1e293b;">${koNames[currentN]}</span>
+          </div>
+          <div style="background: #e0e7ff; padding: 15px; border-radius: 12px; text-align: center; color: #3730a3; font-weight: bold; font-size: 1.1rem; border: 1px dashed #818cf8;">
+            외각을 모두 합치는 중... ⏳
+          </div>
+          <button class="btn-action" disabled>애니메이션 진행 중</button>
+        `;
+      } else if (state === 'done') {
+        infoPanel.innerHTML = `
+          <h3 style="margin-top:0; color:#1e293b; font-size: 1.2rem;">외각 더해보기</h3>
+          <div style="flex: 1; background: white; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px;">
+            <span style="font-size: 0.9rem; color: #64748b; display: block; margin-bottom: 5px; font-weight:bold;">현재 다각형</span>
+            <span style="font-size: 1.3rem; font-weight: 900; color: #1e293b;">${koNames[currentN]}</span>
+          </div>
+          
+          <p style="font-size: 1rem; color: #475569; line-height: 1.5; margin: 10px 0;">
+            언제나 제자리로 돌아오기 때문에 <strong>360°</strong>
+          </p>
+          
+          <div class="formula-box" style="border: 2px solid #3b82f6;">
+            <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 8px; font-weight: 700;">다각형의 외각의 크기의 합</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #1e293b;">
+              항상 <span style="color: #ef4444;">360°</span>
+            </div>
+          </div>
+
+          <button class="btn-action" onclick="drawPolygon()" style="background: #e2e8f0; color: #475569; box-shadow:none;">처음으로 되돌리기 🔄</button>
+        `;
+      }
+    }
+
+    function startAnimation() {
+      isAnimating = true;
+      updateUIState('animating');
+      
+      perimeterArrow.style.display = 'block';
+      centerArrow.style.display = 'block';
+      
+      polyExts.innerHTML = '';
+      extArcs.innerHTML = '';
+      extTexts.innerHTML = '';
+      centerArcs.innerHTML = '';
+
+      const extArcPaths = [];
+      const centerArcPaths = [];
+      const extLines = [];
+      const extTextElements = [];
+      
+      for (let i = 0; i < currentN; i++) {
+        // 잔상 점선 (처음엔 숨김)
+        const p2 = vertices[(i + 1) % currentN];
+        const endX = p2.x + 70 * Math.cos(edgeAngles[i]);
+        const endY = p2.y + 70 * Math.sin(edgeAngles[i]);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute('x1', p2.x);
+        line.setAttribute('y1', p2.y);
+        line.setAttribute('x2', endX);
+        line.setAttribute('y2', endY);
+        line.setAttribute('stroke', '#94a3b8');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-dasharray', '5 5');
+        line.style.opacity = '0';
+        polyExts.appendChild(line);
+        extLines.push(line);
+
+        const pathExt = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathExt.setAttribute('fill', 'none');
+        pathExt.setAttribute('stroke', extColors[i]);
+        pathExt.setAttribute('stroke-width', '5');
+        pathExt.setAttribute('stroke-linecap', 'round');
+        extArcs.appendChild(pathExt);
+        extArcPaths.push(pathExt);
+
+        // 외각 글씨 (처음엔 숨김)
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.textContent = "외각";
+        text.setAttribute('fill', extColors[i]);
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '16px');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.style.opacity = '0';
+        extTexts.appendChild(text);
+        extTextElements.push(text);
+
+        const pathCenter = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathCenter.setAttribute('fill', 'none');
+        pathCenter.setAttribute('stroke', extColors[i]);
+        pathCenter.setAttribute('stroke-width', '7');
+        pathCenter.setAttribute('stroke-linecap', 'round');
+        centerArcs.appendChild(pathCenter);
+        centerArcPaths.push(pathCenter);
+      }
+
+      // 전체 애니메이션 시간 4000ms (4초) 고정
+      const totalTime = 4000;
+      const timePerSegment = totalTime / currentN;
+      
+      // 이동 45%, 회전 45%, 대기 10%
+      const durationMove = timePerSegment * 0.45;
+      const durationTurn = timePerSegment * 0.45;
+      const durationPause = timePerSegment * 0.10;
+
+      let startTime = null;
+      let animState = { edge: 0, phase: 'move' };
+
+      function animate(time) {
+        if (!startTime) startTime = time;
+        let elapsed = time - startTime;
+        let i = animState.edge;
+
+        if (animState.phase === 'move') {
+          let p = elapsed / durationMove;
+          if (p >= 1) {
+            p = 1;
+            // 점선 잔상 나타나기 (접히기 직전)
+            extLines[i].style.opacity = '1';
+            animState.phase = 'turn';
+            startTime = time; // reset
+          }
+          
+          let easedP = easeInOutCubic(p);
+          const p1 = vertices[i];
+          const p2 = vertices[(i + 1) % currentN];
+          const curX = p1.x + easedP * (p2.x - p1.x);
+          const curY = p1.y + easedP * (p2.y - p1.y);
+          const curAngle = edgeAngles[i] * (180 / Math.PI);
+          
+          perimeterArrow.setAttribute('transform', `translate(${curX}, ${curY}) rotate(${curAngle})`);
+          centerArrow.setAttribute('transform', `rotate(${curAngle})`);
+          
+        } else if (animState.phase === 'turn') {
+          let p = elapsed / durationTurn;
+          if (p >= 1) {
+            p = 1;
+            animState.phase = 'pause';
+            startTime = time;
+          }
+
+          let easedP = easeInOutCubic(p);
+          const vertex = vertices[(i + 1) % currentN];
+          const startAngle = edgeAngles[i];
+          const endAngle = edgeAngles[i + 1];
+          const sweep = endAngle - startAngle;
+          const currentSweep = sweep * easedP;
+          
+          const curAngleDeg = (startAngle + currentSweep) * (180 / Math.PI);
+          
+          // 접히면서(회전하면서) 나아가는 효과! 
+          perimeterArrow.setAttribute('transform', `translate(${vertex.x}, ${vertex.y}) rotate(${curAngleDeg})`);
+          centerArrow.setAttribute('transform', `rotate(${curAngleDeg})`);
+
+          if (currentSweep > 0.01) {
+            extArcPaths[i].setAttribute('d', getArcPath(vertex.x, vertex.y, 45, startAngle, currentSweep));
+            centerArcPaths[i].setAttribute('d', getArcPath(0, 0, 55, startAngle, currentSweep));
+          }
+
+          // 글씨 표시 (회전 절반쯤 지났을 때)
+          if (p > 0.5 && extTextElements[i].style.opacity === '0') {
+            extTextElements[i].style.opacity = '1';
+            const midAngle = startAngle + sweep / 2;
+            const tx = vertex.x + 70 * Math.cos(midAngle);
+            const ty = vertex.y + 70 * Math.sin(midAngle);
+            extTextElements[i].setAttribute('x', tx);
+            extTextElements[i].setAttribute('y', ty);
+          }
+
+        } else if (animState.phase === 'pause') {
+          let p = elapsed / durationPause;
+          if (p >= 1) {
+            animState.edge++;
+            if (animState.edge >= currentN) {
+              updateUIState('done');
+              isAnimating = false;
+              return;
+            }
+            animState.phase = 'move';
+            startTime = time;
+          }
+        }
+        
+        animReq = requestAnimationFrame(animate);
+      }
+
+      animReq = requestAnimationFrame(animate);
+    }
+
+    drawPolygon();
+  </script>
+</body>
+</html>

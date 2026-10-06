@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다각형의 내각의 크기의 합</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 10px;
+      color: #334155;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-weight: 900;
+      font-size: 1.5rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+    }
+    .polygon-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .poly-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 1rem;
+    }
+    .poly-btn.active {
+      background: #3b82f6;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    }
+    .poly-btn:hover:not(.active) {
+      background: #e2e8f0;
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-area {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
+    .svg-wrapper {
+      flex: 1.2;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 20px;
+      border: 2px dashed #e2e8f0;
+      box-sizing: border-box;
+    }
+
+    svg {
+      width: 100%;
+      max-width: 400px;
+      height: 350px;
+      overflow: visible;
+    }
+
+    .vertex {
+      fill: #cbd5e1;
+      stroke: #fff;
+      stroke-width: 3;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .vertex:hover {
+      r: 10;
+      fill: #94a3b8;
+    }
+    .vertex.active {
+      fill: #ef4444;
+      stroke: #fecaca;
+      stroke-width: 4;
+      r: 10;
+    }
+
+    .info-panel {
+      flex: 1;
+      width: 100%;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 250px;
+    }
+    
+    .formula-box {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      margin-top: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>다각형의 내각의 크기의 합 📐</h1>
+    <div class="subtitle">다각형을 삼각형으로 쪼개서 내각의 합을 구해볼까요?</div>
+    
+    <div class="polygon-selector" id="polygon-selector">
+      <button class="poly-btn active" data-n="4">사각형</button>
+      <button class="poly-btn" data-n="5">오각형</button>
+      <button class="poly-btn" data-n="6">육각형</button>
+      <button class="poly-btn" data-n="7">칠각형</button>
+      <button class="poly-btn" data-n="8">팔각형</button>
+      <button class="poly-btn" data-n="9">구각형</button>
+    </div>
+
+    <div class="main-area">
+      <div class="svg-wrapper">
+        <svg viewBox="-150 -150 300 300" id="poly-canvas">
+          <polygon id="polygon-outline" points="" fill="transparent" stroke="#94a3b8" stroke-width="4" stroke-linejoin="round"></polygon>
+          <g id="diagonals-group"></g>
+          <g id="polygon-fill-group"></g>
+          <g id="polygon-arc-group"></g>
+          <g id="vertices-group"></g>
+        </svg>
+      </div>
+      
+      <div class="info-panel" id="info-panel">
+        <!-- JS가 내용을 채웁니다 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+    const pastelBg = ['#fee2e2', '#dbeafe', '#dcfce7', '#fef9c3', '#f3e8ff', '#ffedd5', '#fce7f3', '#ccfbf1'];
+    const pastelStroke = ['#f87171', '#60a5fa', '#4ade80', '#facc15', '#c084fc', '#fb923c', '#f472b6', '#2dd4bf'];
+    let currentN = 4;
+    let vertices = [];
+    let selectedVertexIndex = -1;
+
+    const canvas = document.getElementById('poly-canvas');
+    const outline = document.getElementById('polygon-outline');
+    const verticesGroup = document.getElementById('vertices-group');
+    const diagonalsGroup = document.getElementById('diagonals-group');
+    const fillGroup = document.getElementById('polygon-fill-group');
+    const arcGroup = document.getElementById('polygon-arc-group');
+    const infoPanel = document.getElementById('info-panel');
+
+    document.querySelectorAll('.poly-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.poly-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentN = parseInt(e.target.dataset.n);
+        drawPolygon();
+      });
+    });
+
+    function getInteriorArc(v, p1, p2, radius, colorStroke) {
+      let a1 = Math.atan2(p1.y - v.y, p1.x - v.x);
+      let a2 = Math.atan2(p2.y - v.y, p2.x - v.x);
+      let diff = a2 - a1;
+      
+      while (diff <= -Math.PI) diff += 2 * Math.PI;
+      while (diff > Math.PI) diff -= 2 * Math.PI;
+      
+      if (diff < 0) {
+        let temp = a1; a1 = a2; a2 = temp;
+        diff = -diff;
+      }
+      
+      const startX = v.x + radius * Math.cos(a1);
+      const startY = v.y + radius * Math.sin(a1);
+      const endX = v.x + radius * Math.cos(a2);
+      const endY = v.y + radius * Math.sin(a2);
+      
+      return `<path d="M ${v.x} ${v.y} L ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY} Z" fill="${colorStroke}" fill-opacity="0.25" stroke="${colorStroke}" stroke-width="1.5" class="interior-arc" style="opacity: 0; transition: opacity 0.5s ease-out;" />`;
+    }
+
+    function drawPolygon() {
+      vertices = [];
+      verticesGroup.innerHTML = '';
+      diagonalsGroup.innerHTML = '';
+      fillGroup.innerHTML = '';
+      arcGroup.innerHTML = '';
+      selectedVertexIndex = -1;
+
+      const radius = 120;
+      const offset = -Math.PI / 2; 
+
+      for (let i = 0; i < currentN; i++) {
+        const angle = offset + (i * 2 * Math.PI) / currentN;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        vertices.push({ x, y, index: i });
+      }
+
+      const points = vertices.map(v => `${v.x},${v.y}`).join(' ');
+      outline.setAttribute('points', points);
+
+      vertices.forEach(v => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute('cx', v.x);
+        circle.setAttribute('cy', v.y);
+        circle.setAttribute('r', 8);
+        circle.setAttribute('class', 'vertex');
+        circle.dataset.index = v.index;
+        
+        circle.addEventListener('click', () => handleVertexClick(v.index));
+        verticesGroup.appendChild(circle);
+      });
+
+      updateInfoPanel();
+    }
+
+    function handleVertexClick(index) {
+      selectedVertexIndex = index;
+      
+      document.querySelectorAll('.vertex').forEach(el => el.classList.remove('active'));
+      document.querySelector(`.vertex[data-index="${index}"]`).classList.add('active');
+      diagonalsGroup.innerHTML = '';
+      fillGroup.innerHTML = '';
+      arcGroup.innerHTML = '';
+
+      updateInfoPanel();
+
+      for (let i = 1; i < currentN - 2; i++) {
+        const p1 = vertices[index];
+        const p3 = vertices[(index + i + 1) % currentN];
+        
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute('x1', p1.x);
+        line.setAttribute('y1', p1.y);
+        line.setAttribute('x2', p3.x);
+        line.setAttribute('y2', p3.y);
+        line.setAttribute('stroke', '#475569');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-dasharray', '5 5');
+        
+        const length = Math.sqrt(Math.pow(p3.x - p1.x, 2) + Math.pow(p3.y - p1.y, 2));
+        line.style.strokeDasharray = length;
+        line.style.strokeDashoffset = length;
+        
+        diagonalsGroup.appendChild(line);
+        
+        setTimeout(() => {
+          line.style.transition = 'stroke-dashoffset 0.6s ease-out';
+          line.style.strokeDashoffset = '0';
+        }, 10);
+      }
+
+      setTimeout(() => {
+        for (let i = 1; i <= currentN - 2; i++) {
+          const p1 = vertices[index];
+          const p2 = vertices[(index + i) % currentN];
+          const p3 = vertices[(index + i + 1) % currentN];
+          
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute('d', `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} L ${p3.x} ${p3.y} Z`);
+          path.setAttribute('fill', pastelBg[(i - 1) % pastelBg.length]);
+          path.setAttribute('stroke', '#64748b');
+          path.setAttribute('stroke-width', '2.5');
+          path.setAttribute('stroke-linejoin', 'round');
+          path.style.opacity = '0';
+          path.style.transition = 'opacity 0.4s ease-out';
+          fillGroup.appendChild(path);
+          
+          setTimeout(() => {
+            path.style.opacity = '0.9';
+          }, 10);
+        }
+      }, 600);
+
+      setTimeout(() => {
+        let arcsHtml = '';
+        for (let i = 1; i <= currentN - 2; i++) {
+          const p1 = vertices[index];
+          const p2 = vertices[(index + i) % currentN];
+          const p3 = vertices[(index + i + 1) % currentN];
+          
+          const arcRadius = 25;
+          const sColor = pastelStroke[(i - 1) % pastelStroke.length];
+          arcsHtml += getInteriorArc(p1, p2, p3, arcRadius, sColor);
+          arcsHtml += getInteriorArc(p2, p3, p1, arcRadius, sColor);
+          arcsHtml += getInteriorArc(p3, p1, p2, arcRadius, sColor);
+        }
+        arcGroup.innerHTML = arcsHtml;
+        
+        setTimeout(() => {
+          document.querySelectorAll('.interior-arc').forEach(el => {
+            el.style.opacity = '1';
+          });
+        }, 20);
+      }, 1000);
+    }
+function updateInfoPanel() {
+      if (selectedVertexIndex === -1) {
+        infoPanel.innerHTML = `
+          <h3 style="margin-top:0; color:#1e293b; font-size: 1.2rem;">삼각형으로 쪼개기</h3>
+          <p style="color: #64748b; font-size: 1rem; line-height: 1.5;">다각형의 <strong>한 꼭짓점을 눌러</strong><br>대각선을 그어보세요.</p>
+          
+        `;
+      } else {
+        const triangleCount = currentN - 2;
+        const totalAngle = 180 * triangleCount;
+        const koNames = {4: "사각형", 5: "오각형", 6: "육각형", 7: "칠각형", 8: "팔각형", 9: "구각형"};
+        const polyName = koNames[currentN];
+        
+        infoPanel.innerHTML = `
+          <h3 style="margin-top:0; color:#1e293b; font-size: 1.2rem;">삼각형으로 쪼개기</h3>
+          
+          <div style="display: flex; gap: 10px; margin: 15px 0;">
+            <div style="flex: 1; background: white; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; text-align: center;">
+              <span style="font-size: 0.9rem; color: #64748b; display: block; margin-bottom: 5px; font-weight:bold;">다각형</span>
+              <span style="font-size: 1.3rem; font-weight: 900; color: #1e293b;">${polyName}</span>
+            </div>
+            <div style="flex: 1; background: white; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; text-align: center;">
+              <span style="font-size: 0.9rem; color: #3b82f6; display: block; margin-bottom: 5px; font-weight:bold;">만들어진 삼각형</span>
+              <span style="font-size: 1.15rem; font-weight: 900; color: #2563eb;">(${currentN} - 2 = ${triangleCount}) ${triangleCount}개</span>
+            </div>
+          </div>
+
+          <p style="font-size: 0.95rem; color: #475569; line-height: 1.5; margin: 10px 0;">
+            다각형은 한 꼭짓점에서 그은 대각선에 의해 <strong>${triangleCount}개의 삼각형</strong>으로 나뉘어집니다.<br>
+            각 삼각형의 내각의 합은 <strong>180°</strong>이므로, 다각형의 내각의 크기의 합은 다음과 같습니다.
+          </p>
+
+          <div class="formula-box">
+            <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 8px; font-weight: 700;">다각형의 내각의 크기의 합</div>
+            <div style="font-size: 1.4rem; font-weight: 900; color: #1e293b;">
+              180° × <span style="color: #3b82f6;">${triangleCount}</span> = <span style="color: #ef4444;">${totalAngle}°</span>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    drawPolygon();
+  </script>
+</body>
+</html>
