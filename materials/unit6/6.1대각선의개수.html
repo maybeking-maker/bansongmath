@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>다각형의 대각선의 개수</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 20px;
+      color: #334155;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-weight: 900;
+      font-size: 2rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+    .step-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .step-btn:hover:not(.active) {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    
+    .polygon-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .poly-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 1rem;
+    }
+    .poly-btn.active {
+      background: #1e293b;
+      color: white;
+    }
+    .poly-btn:hover:not(.active) {
+      background: #e2e8f0;
+    }
+
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    @media (min-width: 768px) {
+      .main-area {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
+    .svg-wrapper {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 20px;
+      border: 2px dashed #e2e8f0;
+    }
+
+    svg {
+      width: 100%;
+      max-width: 350px;
+      height: 350px;
+      overflow: visible;
+    }
+    .polygon-outline {
+      fill: #ffffff;
+      stroke: #cbd5e1;
+      stroke-width: 3;
+    }
+    .vertex {
+      fill: #cbd5e1;
+      stroke: #fff;
+      stroke-width: 3;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .vertex:hover {
+      r: 12;
+      fill: #3b82f6;
+    }
+    .vertex.clicked {
+      fill: #3b82f6;
+      r: 10;
+    }
+    
+    .diagonal {
+      stroke-linecap: round;
+      transition: stroke 0.3s, stroke-width 0.3s;
+    }
+    .diagonal.first {
+      stroke: #60a5fa;
+      stroke-width: 3;
+    }
+    .diagonal.duplicate {
+      stroke: #ef4444;
+      stroke-width: 5;
+    }
+
+    .info-panel {
+      flex: 1;
+      width: 100%;
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .info-panel h3 {
+      margin: 0 0 20px 0;
+      color: #0f172a;
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 15px;
+    }
+    .info-panel p {
+      margin: 12px 0;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .highlight {
+      font-weight: 900;
+      color: #3b82f6;
+      font-size: 1.2rem;
+    }
+    .highlight-red {
+      font-weight: 900;
+      color: #ef4444;
+    }
+    
+    .final-box {
+      background: #eff6ff;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 25px;
+      border: 1px solid #bfdbfe;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .btn-reset {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #f1f5f9;
+      color: #475569;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .btn-reset:hover {
+      background: #e2e8f0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>다각형의 대각선 파헤치기 🔍</h1>
+    
+    <div class="polygon-selector" id="polygon-selector">
+      <button class="poly-btn active" data-n="4">사각형</button>
+      <button class="poly-btn" data-n="5">오각형</button>
+      <button class="poly-btn" data-n="6">육각형</button>
+      <button class="poly-btn" data-n="7">칠각형</button>
+      <button class="poly-btn" data-n="8">팔각형</button>
+      <button class="poly-btn" data-n="9">구각형</button>
+    </div>
+
+    <div class="step-controls">
+      <button class="step-btn active" id="step1-btn">1단계: 한 꼭짓점에서 긋기</button>
+      <button class="step-btn" id="step2-btn">2단계: 모든 꼭짓점에서 긋기</button>
+    </div>
+
+    <div class="main-area">
+      <div class="svg-wrapper">
+        <svg id="canvas" viewBox="-200 -200 400 400">
+          <polygon class="polygon-outline" id="outline"></polygon>
+          <g id="diagonals-group"></g>
+          <g id="vertices-group"></g>
+        </svg>
+      </div>
+
+      <div class="info-panel" id="info-panel">
+        <!-- JS injects content here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const outline = document.getElementById('outline');
+    const diagonalsGroup = document.getElementById('diagonals-group');
+    const verticesGroup = document.getElementById('vertices-group');
+    const infoPanel = document.getElementById('info-panel');
+    const step1Btn = document.getElementById('step1-btn');
+    const step2Btn = document.getElementById('step2-btn');
+    const polygonSelector = document.getElementById('polygon-selector');
+
+    let currentN = 4;
+    let currentStep = 1; 
+    let vertices = [];
+    let drawnDiagonals = {}; 
+    let clickedVertices = new Set(); 
+
+    function init() {
+      step1Btn.addEventListener('click', () => setStep(1));
+      step2Btn.addEventListener('click', () => setStep(2));
+      
+      const nBtns = polygonSelector.querySelectorAll('.poly-btn');
+      nBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          nBtns.forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          currentN = parseInt(e.target.dataset.n);
+          drawPolygon();
+        });
+      });
+
+      drawPolygon();
+    }
+
+    function setStep(step) {
+      currentStep = step;
+      step1Btn.classList.toggle('active', step === 1);
+      step2Btn.classList.toggle('active', step === 2);
+      drawPolygon();
+    }
+
+    function drawPolygon() {
+      vertices = [];
+      const radius = 160;
+      for (let i = 0; i < currentN; i++) {
+        const angle = -Math.PI / 2 + (i * 2 * Math.PI) / currentN;
+        vertices.push({
+          x: radius * Math.cos(angle),
+          y: radius * Math.sin(angle),
+          index: i
+        });
+      }
+
+      const pointsStr = vertices.map(v => `${v.x},${v.y}`).join(' ');
+      outline.setAttribute('points', pointsStr);
+
+      diagonalsGroup.innerHTML = '';
+      verticesGroup.innerHTML = '';
+      drawnDiagonals = {};
+      clickedVertices.clear();
+      updateInfoPanel();
+
+      vertices.forEach(v => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute('cx', v.x);
+        circle.setAttribute('cy', v.y);
+        circle.setAttribute('r', 9);
+        circle.setAttribute('class', 'vertex');
+        circle.dataset.index = v.index;
+        
+        circle.addEventListener('click', () => handleVertexClick(v.index, circle));
+        verticesGroup.appendChild(circle);
+      });
+    }
+
+    function handleVertexClick(index, circleElem) {
+      if (currentStep === 1) {
+        diagonalsGroup.innerHTML = '';
+        document.querySelectorAll('.vertex').forEach(el => el.classList.remove('clicked'));
+        circleElem.classList.add('clicked');
+
+        let diagCount = 0;
+        for (let i = 0; i < currentN; i++) {
+          if (i !== index && i !== (index + 1) % currentN && i !== (index - 1 + currentN) % currentN) {
+            drawLine(vertices[index], vertices[i], 'first');
+            diagCount++;
+          }
+        }
+        
+          infoPanel.innerHTML = `
+            <div style="background: #e2e8f0; color: #1e293b; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 0.95rem; display: inline-block; margin-bottom: 10px;">👉 1단계: 한 꼭짓점에서 긋기</div>
+            <p style="font-size: 0.95rem; margin-bottom: 15px; margin-top: 0;">선택한 꼭짓점에서 그을 수 있는 대각선은 <span class="highlight">${diagCount}개</span> 입니다.</p>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 0.9rem; line-height: 1.4;">
+              <p style="margin: 0 0 5px 0;"><strong>왜 그럴까요?</strong></p>
+              <p style="margin: 0 0 8px 0;">전체 꼭짓점 ${currentN}개 중에서<br/>자기 자신(1개)과 양옆 이웃(2개)을 제외해야 하므로,</p>
+              <div style="text-align: center; font-size: 1.05rem; background: white; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; font-weight: bold;">
+                ${currentN} - 3 = <span style="color:#3b82f6;">${currentN - 3}개</span>
+              </div>
+            </div>
+          `;
+        } else {
+          if (clickedVertices.has(index)) return; 
+          
+          clickedVertices.add(index);
+          circleElem.classList.add('clicked');
+  
+          for (let i = 0; i < currentN; i++) {
+            if (i !== index && i !== (index + 1) % currentN && i !== (index - 1 + currentN) % currentN) {
+              const minIdx = Math.min(index, i);
+              const maxIdx = Math.max(index, i);
+              const key = `${minIdx}-${maxIdx}`;
+              
+              if (drawnDiagonals[key]) {
+                drawnDiagonals[key]++;
+                drawLine(vertices[index], vertices[i], 'duplicate', key + '-dup');
+              } else {
+                drawnDiagonals[key] = 1;
+                drawLine(vertices[index], vertices[i], 'first', key);
+              }
+            }
+          }
+          
+          updateInfoPanel();
+        }
+      }
+  
+      function drawLine(v1, v2, className, id = '') {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute('x1', v1.x);
+        line.setAttribute('y1', v1.y);
+        line.setAttribute('x2', v2.x);
+        line.setAttribute('y2', v2.y);
+        line.setAttribute('class', `diagonal ${className}`);
+        if (id) line.setAttribute('id', `line-${id}`);
+        
+        const length = Math.sqrt(Math.pow(v2.x - v1.x, 2) + Math.pow(v2.y - v1.y, 2));
+        line.style.strokeDasharray = length;
+        line.style.strokeDashoffset = length;
+        
+        diagonalsGroup.appendChild(line);
+        
+        setTimeout(() => {
+          const duration = className === 'duplicate' ? '0.5s' : '0.4s';
+          line.style.transition = `stroke-dashoffset ${duration} ease-out, stroke 0.3s`;
+          line.style.strokeDashoffset = '0';
+        }, 10);
+      }
+  
+      function updateInfoPanel() {
+        if (currentStep === 1) {
+          infoPanel.innerHTML = `
+            <div style="background: #e2e8f0; color: #1e293b; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 0.95rem; display: inline-block; margin-bottom: 10px;">👉 1단계: 한 꼭짓점에서 긋기</div>
+            <p style="color: #64748b; font-size: 0.95rem; margin-top: 0;">다각형의 꼭짓점을 하나 클릭해 보세요.</p>
+          `;
+        } else {
+          let duplicateCount = 0;
+          for (const key in drawnDiagonals) {
+            if (drawnDiagonals[key] > 1) duplicateCount++;
+          }
+          // 그냥 누른 꼭짓점 수 * 그 꼭짓점에서 그은 대각선 수
+          const totalDrawnDiagonals = clickedVertices.size * (currentN - 3);
+          
+          let message = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="background: #e2e8f0; color: #1e293b; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 0.95rem;">👉 2단계: 중복 찾기</div>
+              <div style="font-size: 0.9rem; color: #64748b; font-weight: bold;">누른 꼭짓점 <span style="font-size: 1.1rem; font-weight: 900; color: #1e293b; margin-left: 5px;">${clickedVertices.size} <span style="font-size:0.9rem; color:#94a3b8;">/ ${currentN}</span></span></div>
+            </div>
+            
+            <p style="font-size: 0.9rem; color: #64748b; margin: 0 0 10px 0; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0;">모든 꼭짓점을 하나씩 눌러보세요. (중복된 선은 <span style="color:#ef4444; font-weight:bold;">빨간색</span>)</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <div style="flex: 1; background: #eff6ff; padding: 12px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-size: 0.75rem; letter-spacing: -0.5px; color: #3b82f6; display: block; margin-bottom: 4px; font-weight:bold;">모든 꼭짓점에서 그은 대각선 수</span>
+                <span style="font-size: 1.4rem; font-weight: 900; color: #2563eb;">${totalDrawnDiagonals}</span>
+              </div>
+              <div style="flex: 1; background: #fef2f2; padding: 12px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-size: 0.85rem; color: #ef4444; display: block; margin-bottom: 4px; font-weight:bold;">겹친 횟수</span>
+                <span style="font-size: 1.4rem; font-weight: 900; color: #dc2626;">${duplicateCount}</span>
+              </div>
+            </div>
+          `;
+          
+          if (clickedVertices.size === currentN) {
+            message += `
+              <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 0.85rem; color: #334155; line-height: 1.4;">
+                <p style="margin: 0 0 5px 0;">모든 꼭짓점(${currentN}개)에서 각각 ${currentN-3}개씩 총 <strong>${currentN * (currentN-3)}개</strong>를 그었지만, 모두 <span style="color:#ef4444; font-weight:bold;">2번씩 중복</span>됩니다.</p>
+                <div style="margin-top: 6px; border-top: 1px dashed #cbd5e1; padding-top: 6px; text-align: center; font-size: 1.05rem; font-weight: 900;">
+                  ${currentN} × ${currentN - 3} <span style="color: #ef4444;">÷ 2</span> = <span style="color: #2563eb;">${(currentN * (currentN - 3))/2}개</span>
+                </div>
+              </div>
+              <button class="btn-reset" onclick="drawPolygon()" style="margin-top: 10px; width: 100%; padding: 8px; background: #e2e8f0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #475569; transition: background 0.2s;">다시 해보기 🔄</button>
+            `;
+          }
+          
+          infoPanel.innerHTML = message;
+        }
+      }
+  
+      init();
+  </script>
+</body>
+</html>
